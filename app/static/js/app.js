@@ -15,11 +15,24 @@ document.getElementById('theme').onclick = () => {
   toast(next === 'light' ? 'Light mode on' : 'Dark mode on');
 };
 applyTheme(document.documentElement.dataset.theme === 'light' ? 'light' : 'dark');
-(async () => {
+// signup: {name, avatar} for the new account's profile
+async function boot(signup) {
+  booted = true;
   await loadState();   // before loadList so the first achievement sync sees the stored state
+  if (signup) {
+    PROFILE.name = signup.name; PROFILE.avatar = signup.avatar;
+    if (!PROFILE.since) PROFILE.since = new Date().toISOString();
+    saveProfile();
+  }
   applyProfile();
   showView('home');
   loadList();
-  if (!PROFILE.loggedIn || !PROFILE.name) showLogin();
-  else if (!PROFILE.onboarded) openOnboarding();
+  if (!PROFILE.onboarded) openOnboarding();
+}
+(async () => {
+  let me = null;
+  try { const r = await _fetch('/api/auth/me'); if (r.ok) me = (await r.json()).user; } catch (e) {}
+  if (!me) return showLogin();
+  adoptUser(me);
+  boot();
 })();

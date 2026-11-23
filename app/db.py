@@ -56,6 +56,24 @@ def ensure_tables():
          " solution text, updated timestamptz DEFAULT now());"
          "CREATE TABLE IF NOT EXISTS public.app_state ("
          "key text PRIMARY KEY, value jsonb NOT NULL, updated timestamptz DEFAULT now());"
+         # accounts: progress/app_state rows belong to a user; rows from before accounts existed are user 0
+         "CREATE TABLE IF NOT EXISTS public.users (id serial PRIMARY KEY, username text NOT NULL,"
+         " pass text NOT NULL, created timestamptz DEFAULT now());"
+         "CREATE UNIQUE INDEX IF NOT EXISTS users_username_lower ON public.users (lower(username));"
+         "CREATE TABLE IF NOT EXISTS public.sessions (token text PRIMARY KEY,"
+         " user_id int NOT NULL REFERENCES public.users ON DELETE CASCADE, created timestamptz DEFAULT now());"
+         "ALTER TABLE public.progress ADD COLUMN IF NOT EXISTS user_id int NOT NULL DEFAULT 0;"
+         "ALTER TABLE public.app_state ADD COLUMN IF NOT EXISTS user_id int NOT NULL DEFAULT 0;"
+         """DO $m$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'progress_user_pk') THEN
+    ALTER TABLE public.progress DROP CONSTRAINT IF EXISTS progress_pkey;
+    ALTER TABLE public.progress ADD CONSTRAINT progress_user_pk PRIMARY KEY (user_id, problem_id);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'app_state_user_pk') THEN
+    ALTER TABLE public.app_state DROP CONSTRAINT IF EXISTS app_state_pkey;
+    ALTER TABLE public.app_state ADD CONSTRAINT app_state_user_pk PRIMARY KEY (user_id, key);
+  END IF;
+END $m$;"""
          """CREATE OR REPLACE FUNCTION public.sql50_sample(sch text) RETURNS json LANGUAGE plpgsql STABLE AS $f$
 DECLARE r record; cols json; exprs text; rws json; res json[] := '{}';
 BEGIN

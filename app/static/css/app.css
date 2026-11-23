@@ -561,8 +561,25 @@ li.CodeMirror-hint-active .sg-d { color:var(--sel-muted); }
                   cursor:pointer; transition:transform .1s, border-color .1s; }
 .av-pick button:hover { transform:scale(1.08); }
 .av-pick button[aria-pressed="true"] { border-color:var(--orange); background:rgba(255,161,22,.14); box-shadow:0 0 0 2px rgba(255,161,22,.25); }
-.welcome-back { display:flex; flex-direction:column; align-items:center; gap:12px; text-align:center; }
-.welcome-back .av.xl { width:84px; height:84px; font-size:42px; animation:pop 1s ease; }
+.auth-tabs { display:grid; grid-template-columns:1fr 1fr; gap:4px; padding:4px; border-radius:10px; background:var(--panel-2); border:1px solid var(--line); }
+.auth-tabs button { padding:8px 10px; border:0; border-radius:7px; background:transparent; color:var(--muted); font-size:13px; font-weight:600; cursor:pointer; }
+.auth-tabs button:hover { color:var(--txt); }
+.auth-tabs button.on { background:var(--panel); color:var(--title); box-shadow:0 1px 3px rgba(0,0,0,.25); }
+#loginForm { display:flex; flex-direction:column; gap:12px; animation:fadeIn .2s ease; }
+#loginForm .field[hidden], #loginForm [hidden] { display:none; }
+.pw-wrap { position:relative; }
+.pw-wrap .input { padding-right:42px; }
+.pw-eye { position:absolute; right:6px; top:50%; transform:translateY(-50%); width:30px; height:30px; border:0; border-radius:6px;
+  background:transparent; cursor:pointer; opacity:.5; font-size:15px; }
+.pw-eye:hover, .pw-eye.on { opacity:1; background:var(--hover-2); }
+.pw-meter { height:4px; margin-top:6px; border-radius:2px; background:var(--line); overflow:hidden; }
+.pw-meter i { display:block; height:100%; width:0; transition:width .2s, background .2s; background:var(--err); }
+.pw-meter i.s2 { background:var(--medium); } .pw-meter i.s3, .pw-meter i.s4 { background:var(--green); }
+.auth-err { margin:0; padding:9px 12px; border-radius:8px; font-size:12.5px; color:var(--err-text);
+  background:rgba(239,71,67,.08); border:1px solid rgba(239,71,67,.35); animation:shake .3s; }
+.auth-switch { margin:0; text-align:center; font-size:12.5px; }
+.auth-switch .linkish { color:var(--orange); text-decoration:none; font-weight:600; font-size:12.5px; }
+#loginGo .spin { display:inline-block; width:13px; height:13px; vertical-align:-2px; border:2px solid rgba(0,0,0,.25); border-top-color:#1a1a1a; border-radius:50%; animation:spin .7s linear infinite; }
 .linkish { background:none; border:0; padding:0; color:var(--muted); font:inherit; font-size:12px; cursor:pointer; text-decoration:underline; }
 .linkish:hover { color:var(--txt); }
 

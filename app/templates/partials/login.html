@@ -8,30 +8,45 @@
       <ul class="feats">
         <li>🐘 Real PostgreSQL 18 — your queries really run</li>
         <li>✅ Instant Check against expected output</li>
-        <li>🏆 26 achievements, levels and daily challenges</li>
-        <li>🔒 100% offline — nothing leaves this computer</li>
+        <li>🏆 Achievements, contests, speed runs and daily challenges</li>
+        <li>👤 Your own account — progress saved to the database</li>
       </ul>
     </div>
     <div class="login-form">
-      <div id="loginBack" class="welcome-back" hidden>
-        <span class="av xl" id="backAv">🦊</span>
-        <h2>Welcome back, <span id="backName"></span>!</h2>
-        <p class="hint" id="backMeta"></p>
-        <button class="btn orange big" id="backGo" style="width:100%">Continue</button>
-        <button class="linkish" id="backSwitch" type="button">Not you? Switch profile</button>
+      <div class="auth-tabs" role="tablist">
+        <button type="button" role="tab" id="tabSignin" class="on" aria-selected="true">Sign in</button>
+        <button type="button" role="tab" id="tabSignup" aria-selected="false">Create account</button>
       </div>
-      <form id="loginForm" autocomplete="off">
-        <h2>Create your profile</h2>
-        <p class="hint" style="margin:4px 0 16px">A local profile — no password, no account, no internet.</p>
-        <div class="field" style="margin-bottom:16px">
-          <label for="loginName">Your name</label>
-          <input class="input" id="loginName" maxlength="24" placeholder="e.g. Alex" required>
+      <form id="loginForm" autocomplete="on" novalidate>
+        <h2 id="authTitle">Welcome back</h2>
+        <p class="hint" id="authSub" style="margin:4px 0 14px">Sign in to pick up where you left off.</p>
+        <div class="field signup-only" hidden>
+          <label for="loginName">Display name</label>
+          <input class="input" id="loginName" maxlength="24" placeholder="e.g. Alex" autocomplete="nickname">
         </div>
-        <div class="field" style="margin-bottom:18px">
+        <div class="field">
+          <label for="authUser">Username</label>
+          <input class="input" id="authUser" maxlength="24" placeholder="3–24 letters, digits, _ . -" autocomplete="username" autocapitalize="off" spellcheck="false">
+        </div>
+        <div class="field">
+          <label for="authPass">Password</label>
+          <div class="pw-wrap">
+            <input class="input" id="authPass" type="password" maxlength="128" placeholder="At least 8 characters" autocomplete="current-password">
+            <button type="button" class="pw-eye" id="authEye" aria-label="Show password">👁</button>
+          </div>
+          <div class="pw-meter signup-only" hidden><i id="pwBar"></i></div>
+        </div>
+        <div class="field signup-only" hidden>
+          <label for="authPass2">Confirm password</label>
+          <input class="input" id="authPass2" type="password" maxlength="128" autocomplete="new-password">
+        </div>
+        <div class="field signup-only" hidden>
           <label>Pick an avatar</label>
           <div class="av-pick" id="loginAvPick"></div>
         </div>
-        <button class="btn orange big" id="loginGo" type="submit" style="width:100%">Start practicing →</button>
+        <p class="auth-err" id="authErr" role="alert" hidden></p>
+        <button class="btn orange big" id="loginGo" type="submit" style="width:100%">Sign in →</button>
+        <p class="hint auth-switch" id="authSwitch"></p>
       </form>
     </div>
   </div>

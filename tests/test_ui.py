@@ -3,7 +3,7 @@
   python tests/test_ui.py        # prints PASS / raises on failure
 """
 import subprocess, sys, time, urllib.request
-import os
+import os, secrets
 from pathlib import Path
 from playwright.sync_api import sync_playwright, expect
 
@@ -22,29 +22,43 @@ def sql(cmd):
     assert ok, t
 
 
-def reset_progress():
-    sql("DELETE FROM public.progress WHERE problem_id=1757")
+# Test accounts get random names; their rows are deleted afterwards. Real accounts are never touched.
+USERS = ["t_" + secrets.token_hex(4), "t_" + secrets.token_hex(4)]
+PASSWORD = "correct-horse-1"
 
 
-# The test logs in as "Tester"; park the user's real profile/game rows and put them back after.
-# IF NOT EXISTS keeps an older backup if a previous run crashed before restoring.
-def backup_state():
-    sql("CREATE TABLE IF NOT EXISTS public.app_state (key text PRIMARY KEY, value jsonb NOT NULL,"
-        " updated timestamptz DEFAULT now());"
-        "CREATE TABLE IF NOT EXISTS public.app_state_testbak AS SELECT * FROM public.app_state;"
-        "DELETE FROM public.app_state;")
+def guard_legacy():
+    # the first account ever created takes over pre-account progress; never let a test account be it
+    db.ensure_tables()
+    ok, t = db.psql("SELECT (SELECT count(*) FROM public.users), (SELECT count(*) FROM public.progress WHERE user_id=0)"
+                    " + (SELECT count(*) FROM public.app_state WHERE user_id=0);")
+    users, legacy = map(int, db.csv_to_grid(t)["rows"][0])
+    if not users and legacy:
+        raise SystemExit("Sign up your own account in the app first: it claims the existing progress.")
 
 
-def restore_state():
-    sql("BEGIN; DELETE FROM public.app_state;"
-        "INSERT INTO public.app_state SELECT * FROM public.app_state_testbak;"
-        "DROP TABLE public.app_state_testbak; COMMIT;")
+def cleanup():
+    names = ",".join(db.q(u) for u in USERS)
+    sql("DELETE FROM public.progress WHERE user_id IN (SELECT id FROM public.users WHERE username IN (%s));"
+        "DELETE FROM public.app_state WHERE user_id IN (SELECT id FROM public.users WHERE username IN (%s));"
+        "DELETE FROM public.users WHERE username IN (%s);" % (names, names, names))
+
+
+def auth(page, mode, user, password=PASSWORD, name=None):
+    page.click("#tabSignup" if mode == "signup" else "#tabSignin")
+    if name:
+        page.fill("#loginName", name)
+    page.fill("#authUser", user)
+    page.fill("#authPass", password)
+    if mode == "signup":
+        page.fill("#authPass2", password)
+    page.click("#loginGo")
 
 
 def wait_up():
     for _ in range(120):
         try:
-            urllib.request.urlopen(BASE + "/api/problems", timeout=15)
+            urllib.request.urlopen(BASE + "/", timeout=15)
             return
         except Exception:
             time.sleep(0.25)
@@ -52,8 +66,7 @@ def wait_up():
 
 
 def main():
-    reset_progress()
-    backup_state()
+    guard_legacy()
     srv = subprocess.Popen([sys.executable, "server.py"], cwd=ROOT,
                            env={**os.environ, "SQL50_PORT": str(PORT), "SQL50_NO_BROWSER": "1"},
                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -75,12 +88,18 @@ def main():
             errors = []
             page.on("pageerror", lambda e: errors.append(str(e)))
             page.goto(BASE)
-            expect(page.locator("#login")).to_be_visible()     # fresh browser: login screen first
-            page.click("#loginGo")                             # empty name is rejected
-            expect(page.locator("#login")).to_be_visible()
+            expect(page.locator("#login")).to_be_visible()     # no session: sign-in screen first
+            page.click("#loginGo")                             # empty form is rejected client-side
+            expect(page.locator("#authErr")).to_be_visible()
+            page.click("#tabSignup")
             page.fill("#loginName", "Tester")
+            page.fill("#authUser", USERS[0])
+            page.fill("#authPass", PASSWORD)
+            page.fill("#authPass2", PASSWORD + "x")
             page.click("#loginGo")
-            expect(page.locator("#onboard")).to_be_visible()   # first login: onboarding tour
+            expect(page.locator("#authErr")).to_contain_text("do not match")
+            auth(page, "signup", USERS[0], name="Tester")
+            expect(page.locator("#onboard")).to_be_visible()   # new account: onboarding tour
             for _ in range(3):
                 page.click("#obNext")
             page.click("#obGoal [data-goal='1']")
@@ -88,7 +107,7 @@ def main():
             expect(page.locator("#onboard")).to_be_hidden()
             expect(page.locator("#home")).to_be_visible()      # dashboard is the landing view
             expect(page.locator("#helloText")).to_contain_text("Tester")
-            expect(page.locator("#ptAchievements .achv")).to_have_count(26)
+            expect(page.locator("#ptAchievements .achv")).to_have_count(page.evaluate("ACHIEVEMENTS.length"))
             page.click("#navUser")                             # settings page
             expect(page.locator("#settings")).to_be_visible()
             expect(page.locator("#setName")).to_have_value("Tester")
@@ -165,7 +184,7 @@ def main():
             page.click("#solved")
             expect(page.locator("#status")).to_contain_text("solved")
             page.reload()                                      # progress must come from DB
-            expect(page.locator("#login")).to_be_hidden()      # profile persists, no re-login
+            expect(page.locator("#login")).to_be_hidden()      # session cookie: no re-login
             expect(page.locator("#home")).to_be_visible()
             expect(page.locator("#ptAchievements .achv.on").first).to_contain_text("First Blood")
             expect(page.locator('.item[data-id="1757"] .dot.solved')).to_have_count(1)
@@ -182,22 +201,35 @@ def main():
             expect(page.locator(".CodeMirror-code")).to_contain_text("recyclable='Y'")
             assert val() == "SELECT product_id FROM products WHERE low_fats='Y' AND recyclable='Y'", val()
             page.click("#navUser")
-            page.click("#setLogout")                           # log out returns to login
-            expect(page.locator("#loginBack")).to_be_visible()
-            assert not errors, f"page errors: {errors}"
+            expect(page.locator("#setMeta")).to_contain_text("@" + USERS[0])
             page.wait_for_timeout(800)                         # let debounced state writes land
+            page.click("#setLogout")                           # sign out returns to the sign-in screen
+            expect(page.locator("#login")).to_be_visible()
+            auth(page, "signin", USERS[0], password="wrong-password")
+            expect(page.locator("#authErr")).to_contain_text("Wrong username or password")
+            assert not errors, f"page errors: {errors}"
             fresh = browser.new_context().new_page()           # empty localStorage: state must come from DB
             fresh.goto(BASE)
-            expect(fresh.locator("#backName")).to_have_text("Tester")
-            fresh.click("#backGo")
+            expect(fresh.locator("#login")).to_be_visible()
+            auth(fresh, "signup", USERS[0].upper(), name="Dup")   # usernames are case-insensitive
+            expect(fresh.locator("#authErr")).to_contain_text("taken")
+            auth(fresh, "signin", USERS[0])
+            expect(fresh.locator("#home")).to_be_visible()
             expect(fresh.locator("#onboard")).to_be_hidden()   # onboarded flag persisted
+            expect(fresh.locator("#helloText")).to_contain_text("Tester")
             expect(fresh.locator("#ptAchievements .achv.on").first).to_contain_text("First Blood")
-            print("PASS: login, onboarding, home, settings, run, result, save-to-DB, reload-persists, "
-                  "logout, profile+achievements persist in DB, editor, formatter, AI hints")
+            other = browser.new_context().new_page()           # a second account has its own progress
+            other.goto(BASE)
+            auth(other, "signup", USERS[1], name="Other")
+            expect(other.locator("#onboard")).to_be_visible()
+            other.click("#obSkip")
+            expect(other.locator('.item[data-id="1757"]')).to_have_count(1)
+            expect(other.locator('.item[data-id="1757"] .dot.solved')).to_have_count(0)
+            print("PASS: sign-up, sign-in, sign-out, sessions, per-user progress, onboarding, home, settings, "
+                  "run, result, save-to-DB, reload-persists, achievements persist in DB, editor, formatter, AI hints")
     finally:
         srv.terminate()
-        reset_progress()
-        restore_state()
+        cleanup()
 
 
 if __name__ == "__main__":

@@ -20,7 +20,7 @@ const DEMO_SQL = [
   "SELECT e.name, b.bonus\nFROM employee e\nLEFT JOIN bonus b USING (empid)\nWHERE COALESCE(b.bonus, 0) < 1000;",
   "SELECT TO_CHAR(trans_date, 'YYYY-MM') AS month,\n       country,\n       COUNT(*) AS trans_count\nFROM transactions\nGROUP BY 1, 2;"
 ];
-let typeTimer = null, loginAvatar = PROFILE.avatar, loginSwitching = false;
+let typeTimer = null, loginAvatar = PROFILE.avatar, authMode = 'signin', authBusy = false;
 function startTyping() {
   const el = $id('typeSql');
   clearInterval(typeTimer);
@@ -33,52 +33,92 @@ function startTyping() {
     else if (++hold > 45) { hold = 0; ci = 0; si = (si + 1) % DEMO_SQL.length; }
   }, 45);
 }
+function setAuthMode(mode) {
+  authMode = mode;
+  const up = mode === 'signup';
+  $id('tabSignin').classList.toggle('on', !up); $id('tabSignin').setAttribute('aria-selected', String(!up));
+  $id('tabSignup').classList.toggle('on', up); $id('tabSignup').setAttribute('aria-selected', String(up));
+  document.querySelectorAll('#loginForm .signup-only').forEach(el => el.hidden = !up);
+  $id('authTitle').textContent = up ? 'Create your account' : 'Welcome back';
+  $id('authSub').textContent = up ? 'Your progress, XP and achievements are saved to your account.' : 'Sign in to pick up where you left off.';
+  $id('loginGo').textContent = up ? 'Create account →' : 'Sign in →';
+  $id('authPass').autocomplete = up ? 'new-password' : 'current-password';
+  $id('authSwitch').innerHTML = up ? 'Already have an account? <button type="button" class="linkish" data-mode="signin">Sign in</button>'
+    : 'New here? <button type="button" class="linkish" data-mode="signup">Create an account</button>';
+  $id('authSwitch').querySelector('button').onclick = e => setAuthMode(e.target.dataset.mode);
+  if (up) renderAvPick($id('loginAvPick'), loginAvatar, a => { loginAvatar = a; });
+  authError('');
+  (up ? $id('loginName') : $id('authUser')).focus();
+}
+function authError(msg, field) {
+  $id('authErr').textContent = msg; $id('authErr').hidden = !msg;
+  document.querySelectorAll('#loginForm .input').forEach(i => i.classList.remove('bad'));
+  if (field) { void field.offsetWidth; field.classList.add('bad'); field.focus(); }
+}
+function pwScore(p) {
+  return Math.min(4, (p.length >= 8) + (p.length >= 12) + (/[a-z]/.test(p) && /[A-Z]/.test(p)) + /\d/.test(p) + /[^A-Za-z0-9]/.test(p));
+}
 function showLogin() {
-  const known = !!PROFILE.name && !loginSwitching;
   $id('login').hidden = false;
-  $id('loginBack').hidden = !known;
-  $id('loginForm').hidden = known;
-  if (known) {
-    $id('backAv').textContent = PROFILE.avatar;
-    $id('backName').textContent = PROFILE.name;
-    $id('backMeta').textContent = 'Level ' + (G.level || 1) + ' · ' + levelTitle(G.level || 1);
-    $id('backGo').focus();
-  } else {
-    $id('loginName').value = loginSwitching ? '' : PROFILE.name;
-    renderAvPick($id('loginAvPick'), loginAvatar, a => { loginAvatar = a; });
-    $id('loginName').focus();
-  }
+  setAuthMode(authMode);
   startTyping();
 }
-function enterApp() {
-  PROFILE.loggedIn = true; saveProfile();
-  $id('login').hidden = true;
-  applyProfile();
-  showView('home');
-  if (!PROFILE.onboarded) openOnboarding();
-}
-$id('loginForm').onsubmit = e => {
-  e.preventDefault();
-  const inp = $id('loginName'), name = inp.value.trim().slice(0, 24);
-  if (!name) {
-    inp.classList.remove('bad'); void inp.offsetWidth; inp.classList.add('bad');
-    inp.focus(); toast('Please enter your name', 'warn');
-    return;
+// localStorage caches belong to one account: drop them when a different user signs in
+function adoptUser(user) {
+  USER = user;
+  let prev = null;
+  try { prev = localStorage.getItem('sql50-user'); } catch (e) {}
+  if (prev !== String(user.id)) {
+    ['sql50-profile', 'sql50-game', 'sql50-chats'].forEach(k => { try { localStorage.removeItem(k); } catch (e) {} });
+    PROFILE = { ...PROFILE_DEFAULT }; G = GAME_DEFAULT();
+    Object.keys(CHATS).forEach(k => delete CHATS[k]);
+    try { localStorage.setItem('sql50-user', String(user.id)); } catch (e) {}
   }
-  const isNew = name !== PROFILE.name;
-  PROFILE.name = name; PROFILE.avatar = loginAvatar;
-  if (isNew) { PROFILE.since = new Date().toISOString(); PROFILE.onboarded = false; }
-  loginSwitching = false;
-  enterApp();
-  toast(`<b>Welcome, ${esc(name)}!</b> ${PROFILE.avatar}`);
+}
+$id('loginForm').onsubmit = async e => {
+  e.preventDefault();
+  if (authBusy) return;
+  const up = authMode === 'signup', user = $id('authUser').value.trim(), pass = $id('authPass').value;
+  const name = $id('loginName').value.trim().slice(0, 24);
+  if (up && !name) return authError('Please enter a display name', $id('loginName'));
+  if (!/^[A-Za-z0-9_.-]{3,24}$/.test(user)) return authError('Username must be 3–24 letters, digits, _ . or -', $id('authUser'));
+  if (pass.length < 8) return authError('Password must be at least 8 characters', $id('authPass'));
+  if (up && pass !== $id('authPass2').value) return authError('Passwords do not match', $id('authPass2'));
+  authBusy = true; authError('');
+  const go = $id('loginGo'), label = go.textContent;
+  go.disabled = true; go.innerHTML = '<span class="spin"></span> ' + (up ? 'Creating account…' : 'Signing in…');
+  let r;
+  try {
+    r = await (await fetch('/api/auth/' + (up ? 'signup' : 'signin'), { method:'POST',
+      headers:{'Content-Type':'application/json'}, body:JSON.stringify({ username:user, password:pass }) })).json();
+  } catch (err) { r = { ok:false, error:'Could not reach the server' }; }
+  authBusy = false; go.disabled = false; go.textContent = label;
+  if (!r.ok) return authError(r.error || 'Something went wrong', up && /taken/.test(r.error || '') ? $id('authUser') : $id('authPass'));
+  if (booted) return location.reload();   // session expired mid-use: start clean
+  adoptUser(r.user);
+  $id('authPass').value = $id('authPass2').value = '';
+  $id('login').hidden = true;
+  await boot(up ? { name, avatar:loginAvatar } : null);
+  toast(up ? `<b>Welcome, ${esc(PROFILE.name)}!</b> ${PROFILE.avatar}` : `<b>Welcome back, ${esc(PROFILE.name || user)}!</b> ${PROFILE.avatar}`);
 };
-$id('loginName').oninput = () => $id('loginName').classList.remove('bad');
-$id('backGo').onclick = () => { enterApp(); toast(`<b>Welcome back, ${esc(PROFILE.name)}!</b> ${PROFILE.avatar}`); };
-$id('backSwitch').onclick = () => { loginSwitching = true; showLogin(); };
-function logout() {
-  PROFILE.loggedIn = false; saveProfile();
-  loginSwitching = false; loginAvatar = PROFILE.avatar;
-  showLogin();
+$id('tabSignin').onclick = () => setAuthMode('signin');
+$id('tabSignup').onclick = () => setAuthMode('signup');
+$id('authEye').onclick = () => {
+  const show = $id('authPass').type === 'password';
+  [$id('authPass'), $id('authPass2')].forEach(i => i.type = show ? 'text' : 'password');
+  $id('authEye').setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+  $id('authEye').classList.toggle('on', show);
+};
+$id('authPass').oninput = () => {
+  const n = pwScore($id('authPass').value);
+  $id('pwBar').style.width = n * 25 + '%';
+  $id('pwBar').className = 's' + n;
+};
+document.querySelectorAll('#loginForm .input').forEach(i => i.addEventListener('input', () => i.classList.remove('bad')));
+async function logout() {
+  try { await fetch('/api/auth/signout', { method:'POST', headers:{'Content-Type':'application/json'}, body:'{}' }); } catch (e) {}
+  ['sql50-profile', 'sql50-game', 'sql50-chats', 'sql50-user'].forEach(k => { try { localStorage.removeItem(k); } catch (e) {} });
+  location.reload();
 }
 
 /* ---------- onboarding ---------- */
@@ -149,7 +189,7 @@ function renderSettings() {
   const s = calcPoints();
   $id('setAvBig').textContent = PROFILE.avatar;
   $id('setNameShow').textContent = PROFILE.name || 'You';
-  $id('setMeta').textContent = `Level ${s.level} · ${levelTitle(s.level)} · ${s.pts} XP` +
+  $id('setMeta').textContent = (USER ? '@' + USER.username + ' · ' : '') + `Level ${s.level} · ${levelTitle(s.level)} · ${s.pts} XP` +
     (PROFILE.since ? ' · member since ' + new Date(PROFILE.since).toLocaleDateString() : '');
   $id('setName').value = PROFILE.name;
   renderAvPick($id('setAvPick'), PROFILE.avatar, a => {

@@ -70,7 +70,7 @@ const AVATARS = ['🦊','🐼','🐯','🦉','🐙','🐧','🦄','🐲','🐸',
 const LEVEL_TITLES = ['Novice','Apprentice','Query Cadet','Join Journeyman','Aggregator','Subquery Sage',
   'Window Wizard','Index Knight','Data Architect','SQL Legend'];
 const BONUS = { firstTry:5, daily:15 };
-const PROFILE_DEFAULT = { name:'', avatar:'🦊', goal:3, onboarded:false, loggedIn:false,
+const PROFILE_DEFAULT = { name:'', avatar:'🦊', goal:3, onboarded:false,
   sound:true, confetti:true, autocomplete:true, aiAuto:true, fontSize:14, since:'' };
 const GAME_DEFAULT = () => ({ runs:0, checks:0, checksOk:0, formats:0, firstTry:0, bonus:0, night:0, early:0,
   days:{}, daily:{}, dailyPick:null, fails:{}, unlocked:{}, feed:[], level:0, lastOpen:null,
@@ -82,7 +82,14 @@ function loadJSON(k, d) {
 function saveJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 let PROFILE = loadJSON('sql50-profile', { ...PROFILE_DEFAULT });
 let G = loadJSON('sql50-game', GAME_DEFAULT());
-let gameReady = false, achFilter = 'all';
+let gameReady = false, achFilter = 'all', USER = null, booted = false;
+// a 401 from the API means the session ended: back to the sign-in screen
+const _fetch = window.fetch.bind(window);
+window.fetch = async (url, opts) => {
+  const r = await _fetch(url, opts);
+  if (r.status === 401 && booted && String(url).startsWith('/api/') && !String(url).startsWith('/api/auth/')) showLogin();
+  return r;
+};
 const justUnlocked = new Set();
 // PostgreSQL (public.app_state) is the source of truth; localStorage is only a cache.
 const pushTimers = {};

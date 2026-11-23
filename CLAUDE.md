@@ -25,6 +25,7 @@ Env: `SQL50_PORT`, `SQL50_NO_BROWSER=1`.
 | `server.py` | Launcher: uvicorn `app.main:app` on 127.0.0.1, opens the browser. |
 | `app/main.py` | FastAPI routes + local-only guard middleware + lifespan (connect, create tables). |
 | `app/db.py` | Runs SQL by shelling to `psql --csv` (no driver). Neon only; `-pooler` host swapped for unpooled. |
+| `app/auth.py` | Accounts: PBKDF2 hashes, session tokens (SHA-256 in DB, cookie `sql50_session`, 30 days), in-memory token cache. |
 | `app/ai.py` | AI hint tutor: Gemini REST or Ollama, system prompt forbids full solutions + regex backstop. |
 | `app/storage.py` | Reads `data/*` from Neon object storage (S3, key prefix `data/`), local `data/` fallback. |
 | `app/templates/` | `base.html`, `index.html`, `partials/*.html` (nav, list, workspace, plan, home, arena, settings, login, modals). |
@@ -41,10 +42,13 @@ Env: `SQL50_PORT`, `SQL50_NO_BROWSER=1`.
 
 - Each problem lives in its **own schema** `q<leetcode_id>` (e.g. `q1757`); table names collide across problems.
 - `public.problems(seq, id, title, difficulty, topic, schema_name, url, description)` — catalog.
-- `public.progress(problem_id, status, solution, updated)`; `status` ∈ {`todo`, `attempted`, `solved`}.
-- `public.app_state(key, value jsonb)` keys `profile`, `game`. localStorage `sql50-profile`/`sql50-game` is a cache; DB wins.
+- `public.users(id, username, pass, created)` (unique on `lower(username)`), `public.sessions(token sha256, user_id, created)`.
+- `public.progress(user_id, problem_id, status, solution, updated)`, PK `(user_id, problem_id)`; `status` ∈ {`todo`, `attempted`, `solved`}.
+- `public.app_state(user_id, key, value jsonb)` keys `profile`, `game`. localStorage `sql50-profile`/`sql50-game` is a cache
+  for the user in `sql50-user` (cleared when another user signs in); DB wins.
+- Rows from before accounts existed have `user_id` 0; the **first account created** takes them over.
 - `public.sql50_sample(schema) → json`: all tables of a problem + first 100 rows, so opening a problem is one round trip.
-- `progress`, `app_state`, `sql50_sample` are created by `ensure_tables()` on startup.
+- `progress`, `app_state`, `users`, `sessions`, `sql50_sample` are created/migrated by `ensure_tables()` on startup.
 - Every psql call to Neon costs ~1.5–2 s (TLS); keep endpoints to one call.
 
 ## AI hints
@@ -57,8 +61,11 @@ The reference solution is never sent to the model. A failed Run/Check auto-reque
 
 ## API
 
+Every `/api/*` route except `/api/auth/*` needs a session (middleware → 401; sets `request.state.uid`).
+
 | Endpoint | Purpose |
 |----------|---------|
+| `POST /api/auth/signup` / `signin` / `signout`, `GET /api/auth/me` | Accounts + session cookie. |
 | `GET /api/problems` | Catalog + status. |
 | `GET /api/problem?id=N` | Description, sample tables, saved solution, status, updated. |
 | `GET /api/solution?id=N` | Reference SQL + note from `solutions.json`. |
@@ -78,7 +85,8 @@ table state. `CHECK_FIXES` in `app/static/js/core.js` normalizes the 1484 fixtur
 ```
 python tests/test_ui.py   # spawns server on 8020 headless; stubs /api/hint; asserts PASS
 ```
-Runs against the real Neon DB: deletes progress for 1757 and backs up `app_state` to `app_state_testbak`, restoring after.
+Runs against the real Neon DB with two random `t_…` accounts, deleted afterwards. Refuses to run while no account exists
+but pre-account (user 0) data does, since the first account would claim it.
 
 ## Conventions
 
