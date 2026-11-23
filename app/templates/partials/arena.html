@@ -1,0 +1,39 @@
+  <section id="arena" class="page" hidden>
+    <div class="page-inner">
+      <div class="arena-hero">
+        <div class="hero-main">
+          <div class="kicker">Arena</div>
+          <h1>Contests &amp; Speed Runs</h1>
+          <p>Race the clock on the same real PostgreSQL tables. Contests start from a blank editor, and solutions,
+            submissions and AI hints stay locked until you finish.</p>
+        </div>
+        <div class="ar-kpis">
+          <div class="hero-tile"><span class="flame">⭐</span><b id="arStars">0</b><small id="arStarsOf">/ 60 contest stars</small></div>
+          <div class="hero-tile"><span class="flame">🏆</span><b id="arDone">0</b><small id="arDoneOf">/ 20 contests</small></div>
+          <div class="hero-tile"><span class="flame">🧩</span><b id="arSec">0</b><small id="arSecOf">/ 7 sections swept</small></div>
+          <div class="hero-tile"><span class="flame">🥇</span><b id="arGold">0</b><small id="arGoldOf">/ 7 gold medals</small></div>
+        </div>
+      </div>
+
+      <div class="ar-resume" id="arResume" hidden>
+        <span class="live-dot"></span>
+        <div><b id="arResumeTitle"></b><span id="arResumeSub"></span> · <span id="arResumeTime"></span></div>
+        <span class="sp"></span>
+        <button class="btn" id="arAbandon">Abandon</button>
+        <button class="btn primary" id="arResumeGo">Resume run →</button>
+      </div>
+
+      <div class="filter-chips ar-tabs" id="arenaTabs">
+        <button class="fchip active" data-t="contest">🏆 Contests <b id="arTabContest">20</b></button>
+        <button class="fchip" data-t="section">🧩 Section Contests <b id="arTabSection">7</b></button>
+        <button class="fchip" data-t="speed">⏱️ Speed Runs <b id="arTabSpeed">7</b></button>
+      </div>
+      <p class="ar-intro" id="arenaIntro"></p>
+      <div class="ar-grid" id="arenaGrid"></div>
+
+      <div class="card" style="margin-top:18px">
+        <h3>Arena achievements <span id="arAchCount"></span></h3>
+        <div class="ach-grid" id="arAch"></div>
+      </div>
+    </div>
+  </section>

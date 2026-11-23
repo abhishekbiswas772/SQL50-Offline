@@ -67,6 +67,7 @@ async function check() {
     const wasSolved = isSolved();
     if (!wasSolved) await saveProgress('solved', { firstTry:!G.fails[cur] });
     else { sfx('win'); updatePointsUI(); }
+    arenaCheck(true);
     setStatus('accepted ✓');
   } else {
     G.fails[cur] = (G.fails[cur] || 0) + 1;
@@ -80,6 +81,7 @@ async function check() {
         <div><div class="cap">Your output</div>${grid(r.result)}</div>
       </div>`;
     document.getElementById('outMeta').textContent = 'Wrong answer · Example 1';
+    arenaCheck(false);
     autoHint({ actual:gridText(r.result), expected:gridText(curExpected) });
     setStatus('wrong answer');
   }

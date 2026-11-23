@@ -73,7 +73,7 @@ function bindHints() {
 // failed Run/Check: show the error (already rendered) plus an AI hint under it. ctx: {error} or {actual, expected}
 function autoHint(ctx) {
   lastFail = ctx;
-  if (!PROFILE.aiAuto || cur === null) return;
+  if (!PROFILE.aiAuto || cur === null || arenaLocked()) return;
   const box = document.createElement('div');
   box.className = 'ai-hint';
   $id('out').appendChild(box);

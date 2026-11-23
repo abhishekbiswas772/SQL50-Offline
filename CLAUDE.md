@@ -3,7 +3,9 @@
 Trainer for LeetCode's **Top SQL 50** study plan. FastAPI + Jinja web UI lists the 50 problems, shows each
 problem's sample tables, runs your SQL against a real PostgreSQL 18 database (Neon), checks your result against
 the problem's Example 1 output, gives AI hints (never the solution), and saves progress in the same database.
-Study-plan dashboard, points and achievements run in the client; state persists in the DB.
+Study-plan dashboard, points, achievements and the Arena (20 contests, a contest per section, a speed run per
+section; `contest.js`, results in the `game` blob: `contests`, `speed`, `arena` = live run) run in the client;
+state persists in the DB. During a run the editor starts blank and editorial/solutions/submissions/hints are locked.
 
 ## Run
 
@@ -25,9 +27,9 @@ Env: `SQL50_PORT`, `SQL50_NO_BROWSER=1`.
 | `app/db.py` | Runs SQL by shelling to `psql --csv` (no driver). Neon only; `-pooler` host swapped for unpooled. |
 | `app/ai.py` | AI hint tutor: Gemini REST or Ollama, system prompt forbids full solutions + regex backstop. |
 | `app/storage.py` | Reads `data/*` from Neon object storage (S3, key prefix `data/`), local `data/` fallback. |
-| `app/templates/` | `base.html`, `index.html`, `partials/*.html` (nav, list, workspace, plan, home, settings, login, modals). |
+| `app/templates/` | `base.html`, `index.html`, `partials/*.html` (nav, list, workspace, plan, home, arena, settings, login, modals). |
 | `app/static/css/app.css` | All styles (theme tokens on `:root` / `[data-theme=light]`). |
-| `app/static/js/` | Classic scripts sharing globals, load order matters: core, game, problems, editor, hints, actions, profile, app. |
+| `app/static/js/` | Classic scripts sharing globals, load order matters: core, game, problems, editor, hints, actions, contest, profile, app. |
 | `app/static/vendor/` | CodeMirror 5.65.18 (sql mode, show-hint, closebrackets, matchbrackets, comment, sublime keymap) + sql-formatter 15. Vendored, no CDN. |
 | `data/` | `sql50.sql` (schema + sample data + catalog), `solutions.json`, `problems/*.md`. |
 | `scripts/scrape.py` | Pull problems from LeetCode GraphQL, convert MySQL→Postgres, write `data/`. |

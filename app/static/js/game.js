@@ -90,6 +90,7 @@ function updatePointsUI() {
   document.getElementById('navStreak').title = s.streak + '-day streak';
   document.getElementById('navLevel').textContent = 'L' + s.level;
   if (!document.getElementById('home').hidden) renderHome(s);
+  if (!document.getElementById('arena').hidden) renderArena();
 }
 
 const $id = id => document.getElementById(id);
@@ -189,14 +190,16 @@ function renderHome(s = calcPoints()) {
 
   $id('achCount').textContent = unlocked + ' / ' + ACHIEVEMENTS.length + ' unlocked';
   $id('ptAchievements').innerHTML = ACHIEVEMENTS.filter(a =>
-    achFilter === 'all' || (achFilter === 'on') === !!G.unlocked[a.id]).map(a => {
-    const goal = Math.max(1, achGoal(a, s)), on = !!G.unlocked[a.id], v = Math.min(a.v(s), goal);
-    return `<div class="achv${on ? ' on' : ''}${justUnlocked.has(a.id) ? ' new' : ''}" title="${on ? 'Unlocked ' + new Date(G.unlocked[a.id]).toLocaleDateString() : 'Locked'}">
-      <div class="ai">${a.icon}</div><b>${esc(a.name)}</b><p>${esc(a.desc)}</p>
-      <div class="ap"><i style="width:${on ? 100 : v / goal * 100}%"></i></div>
-      <div class="an"><span>${on ? '✓ Unlocked' : 'Locked'}</span><span>${on ? goal : v} / ${goal}</span></div></div>`;
-  }).join('') || '<p class="hint">Nothing here yet.</p>';
+    achFilter === 'all' || (achFilter === 'on') === !!G.unlocked[a.id]).map(a => achvHtml(a, s)).join('')
+    || '<p class="hint">Nothing here yet.</p>';
   justUnlocked.clear();
+}
+function achvHtml(a, s) {
+  const goal = Math.max(1, achGoal(a, s)), on = !!G.unlocked[a.id], v = Math.min(a.v(s), goal);
+  return `<div class="achv${on ? ' on' : ''}${justUnlocked.has(a.id) ? ' new' : ''}" title="${on ? 'Unlocked ' + new Date(G.unlocked[a.id]).toLocaleDateString() : 'Locked'}">
+    <div class="ai">${a.icon}</div><b>${esc(a.name)}</b><p>${esc(a.desc)}</p>
+    <div class="ap"><i style="width:${on ? 100 : v / goal * 100}%"></i></div>
+    <div class="an"><span>${on ? '✓ Unlocked' : 'Locked'}</span><span>${on ? goal : v} / ${goal}</span></div></div>`;
 }
 
 function tickCountdown() {

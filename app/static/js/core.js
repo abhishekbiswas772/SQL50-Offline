@@ -45,7 +45,23 @@ const ACHIEVEMENTS = [
   { id:'neat', icon:'🧹', name:'Neat Freak', desc:'Format your SQL 10 times', goal:10, v:s => s.formats },
   { id:'writer', icon:'✍️', name:'Data Mutator', desc:'Solve an UPDATE / DELETE problem', goal:1, v:s => s.writes },
   { id:'lvl5', icon:'🚀', name:'Rising Star', desc:'Reach level 5', goal:5, v:s => s.level },
-  { id:'lvl10', icon:'🌟', name:'SQL Legend', desc:'Reach level 10', goal:10, v:s => s.level }
+  { id:'lvl10', icon:'🌟', name:'SQL Legend', desc:'Reach level 10', goal:10, v:s => s.level },
+  // arena (contests / section contests / speed runs)
+  { id:'c1', arena:true, icon:'🎟️', name:'Contender', desc:'Solve a problem in a contest', goal:1, v:s => s.cDone },
+  { id:'cace', arena:true, icon:'🏅', name:'Clean Sweep', desc:'Solve every problem in a contest', goal:1, v:s => s.cAced },
+  { id:'cperfect', arena:true, icon:'💯', name:'Flawless', desc:'Earn 3 stars in a contest', goal:1, v:s => s.cPerfect },
+  { id:'c5', arena:true, icon:'🗓️', name:'Contest Regular', desc:'Complete 5 different contests', goal:5, v:s => s.cDone },
+  { id:'c10', arena:true, icon:'⚔️', name:'Veteran', desc:'Complete 10 different contests', goal:10, v:s => s.cDone },
+  { id:'c20', arena:true, icon:'🏟️', name:'Grand Tour', desc:'Complete all 20 contests', goal:20, v:s => s.cDone },
+  { id:'cstar30', arena:true, icon:'⭐', name:'Star Collector', desc:'Collect 30 contest stars', goal:30, v:s => s.cStars },
+  { id:'cstar60', arena:true, icon:'🌠', name:'Contest Legend', desc:'Collect all 60 contest stars', goal:60, v:s => s.cStars },
+  { id:'sec1', arena:true, icon:'🧩', name:'Section Champion', desc:'Sweep a section contest', goal:1, v:s => s.secAced },
+  { id:'secall', arena:true, icon:'🗺️', name:'Section Conqueror', desc:'Sweep every section contest', goal:s => s.byTopic.size, v:s => s.secAced },
+  { id:'sp1', arena:true, icon:'⏱️', name:'Speedster', desc:'Finish a speed run', goal:1, v:s => s.spDone },
+  { id:'spgold', arena:true, icon:'🥇', name:'Gold Rush', desc:'Win a gold medal in a speed run', goal:1, v:s => s.spGold },
+  { id:'spall', arena:true, icon:'🏎️', name:'Speed Demon', desc:'Finish a speed run in every section', goal:s => s.byTopic.size, v:s => s.spDone },
+  { id:'spgoldall', arena:true, icon:'👑', name:'Golden Sweep', desc:'Gold medal in every section', goal:s => s.byTopic.size, v:s => s.spGold },
+  { id:'blitz', arena:true, icon:'⚡', name:'Blitz', desc:'Clear an arena problem within 60 seconds', goal:1, v:s => s.blitz }
 ];
 const achGoal = (a, s) => typeof a.goal === 'function' ? a.goal(s) : a.goal;
 
@@ -57,7 +73,8 @@ const BONUS = { firstTry:5, daily:15 };
 const PROFILE_DEFAULT = { name:'', avatar:'🦊', goal:3, onboarded:false, loggedIn:false,
   sound:true, confetti:true, autocomplete:true, aiAuto:true, fontSize:14, since:'' };
 const GAME_DEFAULT = () => ({ runs:0, checks:0, checksOk:0, formats:0, firstTry:0, bonus:0, night:0, early:0,
-  days:{}, daily:{}, dailyPick:null, fails:{}, unlocked:{}, feed:[], level:0, lastOpen:null });
+  days:{}, daily:{}, dailyPick:null, fails:{}, unlocked:{}, feed:[], level:0, lastOpen:null,
+  contests:{}, speed:{}, arena:null, blitz:0 });
 function loadJSON(k, d) {
   try { const v = JSON.parse(localStorage.getItem(k)); return v && typeof v === 'object' ? { ...d, ...v } : d; }
   catch (e) { return d; }
@@ -145,10 +162,16 @@ function calcPoints() {
     byTopic.set(p.topic, t);
   });
   const topics = [...byTopic.values()], st = streakInfo();
+  const cs = Object.entries(G.contests), contests = cs.filter(([k]) => k[0] === 'c').map(([, v]) => v);
+  const speeds = Object.values(G.speed);
   return { pts, solved, attempted, total:items.length, diff, byTopic, writes,
            hardSolved:diff.Hard[0], level:Math.floor(pts / 100) + 1,
            topicsDone:topics.filter(t => t.total > 0 && t.solved === t.total).length,
            streak:st.cur, best:st.best, firstTry:G.firstTry, runs:G.runs, formats:G.formats,
            night:G.night, early:G.early, dailyDone:Object.keys(G.daily).length,
-           goalDays:Object.values(G.days).filter(d => d.s >= PROFILE.goal).length };
+           goalDays:Object.values(G.days).filter(d => d.s >= PROFILE.goal).length,
+           cDone:contests.filter(v => v.solved).length, cAced:contests.filter(v => v.solved && v.solved === v.n).length,
+           cPerfect:cs.filter(([, v]) => v.stars === 3).length, cStars:contests.reduce((n, v) => n + (v.stars || 0), 0),
+           secAced:cs.filter(([k, v]) => k[0] === 's' && v.solved && v.solved === v.n).length,
+           spDone:speeds.filter(v => v.best).length, spGold:speeds.filter(v => v.medal === 3).length, blitz:G.blitz || 0 };
 }

@@ -68,12 +68,13 @@ function showView(view) {
   const work = view === 'problems';
   document.getElementById('list').style.display = work ? '' : 'none';
   document.getElementById('main').style.display = work ? '' : 'none';
-  ['home', 'plan', 'settings'].forEach(v => document.getElementById(v).hidden = v !== view);
+  ['home', 'plan', 'settings', 'arena'].forEach(v => document.getElementById(v).hidden = v !== view);
   document.querySelectorAll('#nav nav a').forEach(a => a.classList.toggle('active', a.dataset.view === view));
   document.getElementById('navUser').classList.toggle('active', view === 'settings');
   if (view === 'plan') renderPlan();
   else if (view === 'home') renderHome();
   else if (view === 'settings') renderSettings();
+  else if (view === 'arena') renderArena();
   else cm.refresh();   // CodeMirror can't measure while hidden
 }
 
@@ -289,10 +290,10 @@ function lockHtml(title, text) {
 }
 
 function updateTabLocks() {
-  const locked = !isSolved();
+  const locked = !isSolved(), arena = arenaLocked();
   document.querySelectorAll('#descTabs .tab').forEach(t => {
     const needs = t.dataset.tab === 'editorial' || t.dataset.tab === 'solutions';
-    t.classList.toggle('locked', needs && locked);
+    t.classList.toggle('locked', (needs && locked) || (arena && t.dataset.tab !== 'description'));
     const lock = t.querySelector('.lock');
     if (lock) lock.hidden = !(needs && locked);
   });
@@ -441,7 +442,8 @@ async function ensureReference() {
 function renderTab() {
   const desc = document.getElementById('desc');
   if (!desc || cur === null) return;
-  if (curTab === 'description') {
+  if (curTab !== 'description' && arenaLocked()) desc.innerHTML = arenaLockHtml();
+  else if (curTab === 'description') {
     desc.innerHTML = descriptionHtml();
     bindDescriptionExtras();
   } else if (curTab === 'editorial') {
@@ -470,9 +472,10 @@ function setTab(name) {
 
 async function openProblem(id, schema) {
   const myId = id;
+  arenaStash();
   cur = id; curSchema = schema; curRef = null; lastFail = null; curTab = 'description'; curExampleIdx = 0;
   G.lastOpen = id; saveGame();
-  renderList();
+  renderList(); renderArenaBar(); updateTabLocks();
   const d = await (await fetch('/api/problem?id=' + id)).json();
   if (cur !== myId) return;
   if (d.error) { toast('Could not load problem', 'bad'); return; }
@@ -483,7 +486,7 @@ async function openProblem(id, schema) {
   curExpected = curParsed.examples.length ? curParsed.examples[0].output : null;
   curMeta = { status:d.status || 'todo', updated:d.updated || '' };
   curSavedSolution = d.solution || '';
-  edSet(d.solution || '', true);
+  edSet(arenaDraft(id) ?? (d.solution || ''), true);
   document.getElementById('work').classList.add('on');
   cm.refresh();
   document.getElementById('schema').textContent = schema;

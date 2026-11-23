@@ -9,6 +9,8 @@
 
 {% include "partials/home.html" %}
 
+{% include "partials/arena.html" %}
+
 {% include "partials/settings.html" %}
 </div>
 
@@ -35,6 +37,7 @@
 <script src="{{ url_for('static', path='js/editor.js') }}"></script>
 <script src="{{ url_for('static', path='js/hints.js') }}"></script>
 <script src="{{ url_for('static', path='js/actions.js') }}"></script>
+<script src="{{ url_for('static', path='js/contest.js') }}"></script>
 <script src="{{ url_for('static', path='js/profile.js') }}"></script>
 <script src="{{ url_for('static', path='js/app.js') }}"></script>
 {% endblock %}
