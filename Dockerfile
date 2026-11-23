@@ -50,9 +50,10 @@ FROM runtime AS test
 USER root
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
-COPY requirements-dev.txt ./
+COPY requirements.txt requirements-dev.txt ./
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install -r requirements-dev.txt && \
+    apt-get update && apt-get install -y --no-install-recommends libatomic1 && \
     playwright install --with-deps chromium && \
     rm -rf /var/lib/apt/lists/* && \
     chmod -R a+rX /ms-playwright
@@ -62,3 +63,6 @@ COPY --chown=10001:10001 server.py ./
 
 USER 10001
 CMD ["python", "tests/test_ui.py"]
+
+# Last stage = default target, so a plain `docker build` gives the app image, not the test one.
+FROM runtime AS app

@@ -25,10 +25,12 @@ async function boot(signup) {
     saveProfile();
   }
   applyProfile();
-  showView('home');
-  loadList();
+  await loadList();
+  lastSyncAt = Date.now();
+  route();
   if (!PROFILE.onboarded) openOnboarding();
 }
+addEventListener('hashchange', () => { if (booted) route(); });
 (async () => {
   let me = null;
   try { const r = await _fetch('/api/auth/me'); if (r.ok) me = (await r.json()).user; } catch (e) {}

@@ -95,12 +95,87 @@ const justUnlocked = new Set();
 const pushTimers = {};
 function pushState(key, value, now) {
   clearTimeout(pushTimers[key]);
-  const send = () => { delete pushTimers[key]; fetch('/api/state', { method:'POST', keepalive:true,
-    headers:{'Content-Type':'application/json'}, body:JSON.stringify({ key, value }) }).catch(() => {}); };
+  const send = () => { delete pushTimers[key];
+    const v = key === 'game' ? G : key === 'profile' ? PROFILE : value;   // send the latest merged state
+    fetch('/api/state', { method:'POST', keepalive:true,
+      headers:{'Content-Type':'application/json'}, body:JSON.stringify({ key, value:v }) }).catch(() => {}); };
   if (now) send(); else pushTimers[key] = setTimeout(send, 400);   // debounce bursts of runs/checks
 }
-const saveProfile = () => { saveJSON('sql50-profile', PROFILE); pushState('profile', PROFILE); };
-const saveGame = () => { saveJSON('sql50-game', G); pushState('game', G); };
+const saveProfile = () => {
+  saveJSON('sql50-profile', PROFILE);
+  broadcast({ type:'state', key:'profile', value:PROFILE });
+  pushState('profile', PROFILE);
+};
+const saveGame = () => {
+  saveJSON('sql50-game', G);
+  broadcast({ type:'state', key:'game', value:G });
+  pushState('game', G);
+};
+/* ---------- live sync across tabs ---------- */
+const liveSync = 'BroadcastChannel' in window ? new BroadcastChannel('sql50-live') : null;
+function broadcast(msg) { try { if (liveSync) liveSync.postMessage(msg); } catch (e) {} }
+let remoteApply = false;   // true while mirroring another tab: never echo its state back to the DB
+function applyRemoteState(key, value) {
+  if (!value || typeof value !== 'object') return;
+  if (key === 'profile') { PROFILE = { ...PROFILE_DEFAULT, ...value }; applyProfile(); }
+  else if (key === 'game') G = { ...GAME_DEFAULT(), ...value };
+  else return;
+  remoteApply = true;
+  try {
+    if (items.length) refreshProgress();
+    if (!document.getElementById('settings').hidden) renderSettings();
+  } finally { remoteApply = false; }
+}
+function applyRemoteProgress(id, status) {
+  const p = items.find(x => x.id === id);
+  if (p) p.status = status;
+  if (cur === id) {
+    curMeta = { ...curMeta, status };
+    if (curTab === 'editorial' || curTab === 'solutions') renderTab();
+  }
+  remoteApply = true;
+  try {
+    if (items.length) { renderList(); refreshProgress(); }
+  } finally { remoteApply = false; }
+}
+function applyReset() {
+  if (items.length) items.forEach(p => p.status = 'todo');
+  G = GAME_DEFAULT();
+  saveJSON('sql50-game', G);   // no pushState: the reset endpoint already cleared this row
+  curRef = null; curSavedSolution = ''; curMeta = { status:'todo', updated:'' };
+  if (items.length) { renderList(); refreshProgress(); }
+  if (cur !== null && document.getElementById('work').classList.contains('on')) {
+    edSet('', true);
+    document.getElementById('out').innerHTML = '<p class="hint">Progress was reset. Run your query, then hit Check.</p>';
+    document.getElementById('outMeta').textContent = '';
+    setStatus('');
+    updateTabLocks();
+    setTab('description');
+  }
+}
+if (liveSync) liveSync.onmessage = e => {
+  const m = e.data || {};
+  if (m.type === 'state') applyRemoteState(m.key, m.value);
+  else if (m.type === 'progress') applyRemoteProgress(+m.id, m.status);
+  else if (m.type === 'reset') applyReset();
+};
+let syncing = false, lastSyncAt = 0;
+async function refreshFromServer() {
+  if (!booted || syncing) return;
+  if (Date.now() - lastSyncAt < 4000) return;
+  syncing = true; lastSyncAt = Date.now();
+  try {
+    await loadList();   // progress is in PostgreSQL; G/PROFILE arrive live over BroadcastChannel
+    if (cur !== null) {
+      const p = items.find(x => x.id === cur);
+      if (p) curMeta = { ...curMeta, status:p.status };
+      updateTabLocks();
+    }
+    if (!document.getElementById('settings').hidden) renderSettings();
+  } catch (e) {} finally { syncing = false; }
+}
+addEventListener('focus', refreshFromServer);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshFromServer(); });
 addEventListener('pagehide', () => {
   if (pushTimers.profile) pushState('profile', PROFILE, true);
   if (pushTimers.game) pushState('game', G, true);

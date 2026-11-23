@@ -117,6 +117,14 @@ def main():
             page.click('.item[data-id="1757"]')               # open first problem
             expect(page.locator("#desc h2")).to_contain_text("Recyclable")
             expect(page.locator("#desc table").first).to_be_visible()  # sample data shown
+            assert page.locator('.item[data-id="1757"]').get_attribute("href") == "#problem/1757"
+            assert page.url.endswith("#problem/1757")
+            with ctx.expect_page() as tab_info:               # Ctrl+click opens the problem in a new tab
+                page.locator('.item[data-id="1757"]').click(modifiers=["Control"])
+            linked = tab_info.value
+            expect(linked.locator("#desc h2")).to_contain_text("Recyclable")
+            assert linked.url.endswith("#problem/1757"), linked.url
+            linked.close()
             val = lambda: page.evaluate("cm.getValue()")         # editor is CodeMirror; `cm` is its instance
             def setv(v, line=None):
                 page.evaluate("([v, l]) => { cm.setValue(v); cm.focus(); if (l !== null) cm.setCursor(l, 0); }", [v, line])
@@ -176,6 +184,9 @@ def main():
             page.keyboard.press("Enter")
             expect(page.locator("#aiLog .ai-msg.assistant")).to_have_count(2)
             assert hint_calls[-1]["messages"][-1]["text"] == "another hint please"
+            home_tab = ctx.new_page()                          # dashboard in a second tab
+            home_tab.goto(BASE)
+            expect(home_tab.locator("#home")).to_be_visible()
             setv("SELECT product_id FROM products WHERE low_fats='Y' AND recyclable='Y'")
             page.click("#run")
             expect(page.locator("#out table")).to_be_visible()
@@ -183,8 +194,13 @@ def main():
             assert cells == ["1", "3"], f"wrong result rows: {cells}"
             page.click("#solved")
             expect(page.locator("#status")).to_contain_text("solved")
-            page.reload()                                      # progress must come from DB
+            expect(home_tab.locator("#kSolved")).to_have_text("1")   # updates live across tabs
+            expect(home_tab.locator('.item[data-id="1757"] .dot.solved')).to_have_count(1)
+            home_tab.close()
+            page.reload()                                      # deep link: refresh reopens this problem
             expect(page.locator("#login")).to_be_hidden()      # session cookie: no re-login
+            expect(page.locator("#desc h2")).to_contain_text("Recyclable")
+            page.click("#navHome")
             expect(page.locator("#home")).to_be_visible()
             expect(page.locator("#ptAchievements .achv.on").first).to_contain_text("First Blood")
             expect(page.locator('.item[data-id="1757"] .dot.solved')).to_have_count(1)
@@ -196,9 +212,12 @@ def main():
             page.click("#crCancel")
             expect(page.locator("#confirmReset")).to_be_hidden()
             expect(page.locator('.item[data-id="1757"] .dot.solved')).to_have_count(1)
-            page.click("#navProblems")                         # reload lands on Home
+            page.click("#navProblems")                         # back to the workspace
             page.locator('.item[data-id="1757"]').click()
             expect(page.locator(".CodeMirror-code")).to_contain_text("recyclable='Y'")
+            assert val() == "SELECT product_id FROM products WHERE low_fats='Y' AND recyclable='Y'", val()
+            setv("SELECT broken")                              # reset restores the saved solution
+            page.click("#resetEditor")
             assert val() == "SELECT product_id FROM products WHERE low_fats='Y' AND recyclable='Y'", val()
             page.click("#navUser")
             expect(page.locator("#setMeta")).to_contain_text("@" + USERS[0])

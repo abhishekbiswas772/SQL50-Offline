@@ -15,7 +15,7 @@ from fastapi.templating import Jinja2Templates
 ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(ROOT / ".env")  # before app imports: db reads SQL50_PSQL at import
 
-from . import ai, auth, db, storage  # noqa: E402
+from . import ai, auth, db, storage, sync  # noqa: E402
 from .db import csv_to_grid, parse_sample, psql, q  # noqa: E402
 PORT = int(os.environ.get("SQL50_PORT", 8000))
 STATUSES = {"todo", "attempted", "solved"}
@@ -28,6 +28,7 @@ HERE = Path(__file__).parent
 async def lifespan(_):
     print("database:", db.connect())
     db.ensure_tables()
+    print("neon sync:", "on" if sync.start() else "off (NEON_URL not set)")
     yield
 
 

@@ -59,7 +59,8 @@ kbd { background:var(--kbd-bg); border:1px solid var(--kbd-line); border-bottom-
 /* ---------- top nav ---------- */
 #nav { flex:none; height:50px; display:flex; align-items:center; gap:22px; padding:0 18px;
        background:var(--nav); border-bottom:1px solid var(--line); }
-.brand { display:flex; align-items:center; gap:9px; font-size:16px; font-weight:600; letter-spacing:.2px; }
+.brand { display:flex; align-items:center; gap:9px; font-size:16px; font-weight:600; letter-spacing:.2px;
+         color:inherit; text-decoration:none; }
 .brand .logo { color:var(--orange); font-family:"Cascadia Code",Consolas,monospace; font-weight:700; font-size:17px; }
 .brand .tag { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.6px; color:var(--orange);
               border:1px solid rgba(255,161,22,.4); background:rgba(255,161,22,.1); border-radius:999px; padding:1px 7px; }
@@ -104,8 +105,10 @@ html[data-theme="light"] .theme-btn .ico-moon { display:block; }
 .filter input:focus { border-color:var(--orange); }
 #items { flex:1; overflow:auto; }
 .item { display:flex; gap:9px; align-items:flex-start; padding:10px 14px; cursor:pointer;
-        border-bottom:1px solid var(--line-soft); border-left:2px solid transparent; }
+        border-bottom:1px solid var(--line-soft); border-left:2px solid transparent;
+        color:inherit; text-decoration:none; }
 .item:hover { background:var(--hover-1); }
+.item:focus-visible { background:var(--hover-2); box-shadow:inset 2px 0 var(--orange); outline:none; }
 .item.sel { background:var(--hover-3); border-left-color:var(--orange); }
 .item .num { min-width:24px; text-align:right; color:var(--dim); font-size:12px; padding-top:2px; }
 .item .t { flex:1; min-width:0; font-size:13px; color:var(--text-2); line-height:1.35; }
@@ -229,7 +232,8 @@ tbody tr:hover td { background:var(--hover-1); }
 .verdict.bad .vicon { color:var(--err); background:rgba(239,71,67,.14); }
 .verdict b { display:block; color:var(--title); font-size:14px; }
 .verdict p { margin:2px 0 0; color:var(--muted); font-size:12.5px; }
-.diff-grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px; }
+.diff-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap:14px; }
+.diff-grid > div { min-width:0; overflow-x:auto; }   /* wide Expected/Your output tables scroll, never overlap */
 .diff-grid .cap { font-size:11.5px; color:var(--muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:.6px; }
 .diff-grid .cap.out { color:var(--green); }
 #out .err .err-tag { display:inline-flex; align-items:center; gap:8px; margin-bottom:7px; }
@@ -250,7 +254,7 @@ tbody tr:hover td { background:var(--hover-1); }
 #status { font-size:12px; color:var(--green); margin-left:auto; }
 .btn { border:1px solid var(--line); background:transparent; color:var(--txt); font-size:13px; font-weight:500;
        padding:6px 14px; border-radius:7px; cursor:pointer; display:inline-flex; align-items:center; gap:7px;
-       transition:background .12s, border-color .12s, transform .06s; }
+       text-decoration:none; transition:background .12s, border-color .12s, transform .06s; }
 .btn:hover { background:var(--hover-3); }
 .btn:active { transform:translateY(1px); }
 .btn:disabled { opacity:.55; cursor:default; }
@@ -367,7 +371,7 @@ li.CodeMirror-hint-active .sg-d { color:var(--sel-muted); }
 .topic-rows { border-top:1px solid var(--line-soft); }
 .topic.collapsed .topic-rows { display:none; }
 .plan-row { display:flex; align-items:center; gap:10px; padding:9px 16px; border-top:1px solid var(--line-soft);
-            cursor:pointer; outline:none; }
+            cursor:pointer; outline:none; color:inherit; text-decoration:none; }
 .topic-rows .plan-row:first-child { border-top:0; }
 .plan-row:hover { background:var(--hover-1); }
 .plan-row:focus-visible { background:var(--hover-2); box-shadow:inset 2px 0 var(--orange); }

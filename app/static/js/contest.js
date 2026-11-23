@@ -297,5 +297,9 @@ function showArenaResult(d, r, o) {
 $id('arrOk').onclick = () => { $id('arenaResult').hidden = true; showView('arena'); };
 $id('arAbandon').onclick = () => { if (confirm('Abandon this run? Nothing will be recorded.')) arenaAbandon(); };
 $id('arResumeGo').onclick = () => { const d = arenaDef(); if (d) arenaStart(d.key); };
-$id('navArena').onclick = e => { e.preventDefault(); showView('arena'); };
+$id('navArena').onclick = e => {
+  if (!plainClick(e)) return;
+  e.preventDefault();
+  navigate('arena');
+};
 document.querySelectorAll('#arenaTabs .fchip').forEach(b => b.onclick = () => { arenaTab = b.dataset.t; renderArena(); });

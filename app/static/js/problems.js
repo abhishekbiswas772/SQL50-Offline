@@ -1,3 +1,6 @@
+const problemHref = id => '#problem/' + id;
+const plainClick = e => e.button === 0 && !e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey;
+
 function toast(html, kind = '') {
   const box = document.getElementById('toasts');
   const el = document.createElement('div');
@@ -44,15 +47,19 @@ function renderList() {
   const f = document.getElementById('q').value.toLowerCase();
   document.getElementById('items').innerHTML = items
     .filter(p => !f || (p.id + p.title + p.topic + p.difficulty).toLowerCase().includes(f))
-    .map(p => `<div class="item${cur === p.id ? ' sel' : ''}" data-id="${p.id}" data-schema="${esc(p.schema_name)}">
+    .map(p => `<a class="item${cur === p.id ? ' sel' : ''}" href="${problemHref(p.id)}" data-id="${p.id}" data-schema="${esc(p.schema_name)}">
       <span class="dot ${esc(p.status)}" title="${esc(p.status)}"></span>
       <span class="num">${p.id}</span>
       <span class="t">${esc(p.title)}
         <span class="meta"><span class="diff ${esc(p.difficulty)}">${esc(p.difficulty)}</span>
         <span class="sep">·</span><span class="topic">${esc(p.topic)}</span></span>
-      </span></div>`).join('');
-  document.querySelectorAll('.item').forEach(el =>
-    el.onclick = () => openProblem(+el.dataset.id, el.dataset.schema));
+      </span></a>`).join('');
+  document.querySelectorAll('#items .item').forEach(el =>
+    el.onclick = e => {
+      if (!plainClick(e)) return;
+      e.preventDefault();
+      openProblem(+el.dataset.id, el.dataset.schema);
+    });
 }
 
 /* ---------- study plan ---------- */
@@ -76,6 +83,24 @@ function showView(view) {
   else if (view === 'settings') renderSettings();
   else if (view === 'arena') renderArena();
   else cm.refresh();   // CodeMirror can't measure while hidden
+}
+
+function navigate(view) {
+  const h = '#' + view;
+  if (location.hash !== h) {
+    try { history.replaceState({ view }, '', h); } catch (e) {}   // no history entry: in-app views replace
+  }
+  showView(view);
+}
+
+function route() {
+  const m = /^#problem\/(\d+)$/.exec(location.hash);
+  if (m) {
+    const p = items.find(x => x.id === +m[1]);
+    if (p) return openFromPlan(p.id, p.schema_name);
+  }
+  const v = location.hash.slice(1);
+  showView(['home', 'plan', 'problems', 'arena', 'settings'].includes(v) ? v : 'home');
 }
 
 function openFromPlan(id, schema) {
@@ -127,14 +152,14 @@ function renderPlan() {
     const sd = ps.filter(p => p.status === 'solved').length;
     const pp = ps.length ? Math.round(sd / ps.length * 100) : 0;
     const collapsed = planCollapsed.has(topic);
-    const rows = ps.map(p => `<div class="plan-row${next && next.id === p.id ? ' next' : ''}"
-        data-id="${p.id}" data-schema="${esc(p.schema_name)}" tabindex="0" role="button">
+    const rows = ps.map(p => `<a class="plan-row${next && next.id === p.id ? ' next' : ''}"
+        href="${problemHref(p.id)}" data-id="${p.id}" data-schema="${esc(p.schema_name)}">
         <span class="pdot ${esc(p.status)}">${p.status === 'solved' ? '✓' : p.status === 'attempted' ? '•' : ''}</span>
         <span class="pseq">${esc(p.seq)}</span>
         <span class="ptitle">${esc(p.title)}</span>
         ${next && next.id === p.id ? '<span class="pnext">Up next</span>' : ''}
         <span class="diff ${esc(p.difficulty)}">${esc(p.difficulty)}</span>
-      </div>`).join('');
+      </a>`).join('');
     return `<section class="topic${collapsed ? ' collapsed' : ''}" data-topic="${esc(topic)}">
       <button class="topic-head" type="button" aria-expanded="${!collapsed}">
         <span class="chev">▾</span>
@@ -157,9 +182,13 @@ function renderPlan() {
   });
   document.querySelectorAll('#planSections .plan-row').forEach(row => {
     const go = () => openFromPlan(+row.dataset.id, row.dataset.schema);
-    row.onclick = go;
+    row.onclick = e => {
+      if (!plainClick(e)) return;
+      e.preventDefault();
+      go();
+    };
     row.onkeydown = e => {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); }
+      if (e.key === ' ') { e.preventDefault(); go(); }
     };
   });
 }
@@ -495,6 +524,9 @@ async function openProblem(id, schema) {
   setStatus('');
   updateTabLocks();
   setTab('description');
+  if (location.hash !== problemHref(id)) {
+    try { history.replaceState({ problem:id }, '', problemHref(id)); } catch (e) {}
+  }
   if (curMeta.status === 'solved') ensureReference();
 }
 

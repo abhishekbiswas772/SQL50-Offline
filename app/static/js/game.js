@@ -50,6 +50,7 @@ function celebrate(icon, title, text) {
 
 // unlock achievements / detect level-ups; silent on first load so old progress doesn't spam
 function syncGame(s, silent) {
+  silent = silent || remoteApply;   // remote tabs announce their own unlocks
   let changed = false, fresh = [];
   ACHIEVEMENTS.forEach(a => {
     const goal = achGoal(a, s);
@@ -67,7 +68,7 @@ function syncGame(s, silent) {
     }
     G.level = s.level; changed = true;
   }
-  if (changed) saveGame();
+  if (changed && !remoteApply) saveGame();
 }
 const levelTitle = lv => LEVEL_TITLES[Math.min(lv, LEVEL_TITLES.length) - 1];
 
@@ -126,6 +127,7 @@ function renderHome(s = calcPoints()) {
 
   const next = nextProblem();
   $id('homeContinueLabel').textContent = !s.solved ? 'Start plan' : next && next.status !== 'solved' ? 'Continue · #' + next.id : 'Review plan';
+  $id('homeContinue').href = next ? problemHref(next.id) : '#plan';
   $id('homeFlame').classList.toggle('cold', !s.streak);
   $id('homeStreak').textContent = s.streak;
   $id('homeBest').textContent = 'best ' + s.best;
@@ -152,10 +154,14 @@ function renderHome(s = calcPoints()) {
       <span>${esc(dp.topic)}</span><span class="xp-pill">+${(DIFF_POINTS[dp.difficulty] || 10) + BONUS.daily} XP</span>
       <span class="countdown" id="dailyCountdown"></span></div>
     ${doneToday ? '<span class="pill solved">✓ Completed today — new challenge at midnight</span>'
-      : dp.status === 'solved' ? '<button class="btn" id="dailyGo">Already solved · review it</button>'
-      : '<button class="btn orange" id="dailyGo">Accept challenge →</button>'}`;
+      : dp.status === 'solved' ? `<a class="btn" href="${problemHref(dp.id)}" id="dailyGo">Already solved · review it</a>`
+      : `<a class="btn orange" href="${problemHref(dp.id)}" id="dailyGo">Accept challenge →</a>`}`;
   const dg = $id('dailyGo');
-  if (dg) dg.onclick = () => openFromPlan(dp.id, dp.schema_name);
+  if (dg) dg.onclick = e => {
+    if (!plainClick(e)) return;
+    e.preventDefault();
+    openFromPlan(dp.id, dp.schema_name);
+  };
   tickCountdown();
 
   // heatmap: last 17 weeks, columns = weeks starting Sunday
@@ -182,7 +188,7 @@ function renderHome(s = calcPoints()) {
     return `<div class="mrow" data-go="plan"><span class="mname diff ${d}">${d}</span>
       <span class="mbar ${d}"><i style="width:${pct}%"></i></span><span class="mnum">${a}/${b}</span></div>`;
   }).join('');
-  document.querySelectorAll('#home [data-go="plan"]').forEach(r => r.onclick = () => showView('plan'));
+  document.querySelectorAll('#home [data-go="plan"]').forEach(r => r.onclick = () => navigate('plan'));
 
   $id('feed').innerHTML = G.feed.length ? G.feed.slice(0, 8).map(f =>
     `<li><span class="fi">${f.icon}</span><span class="ft">${esc(f.text)}</span><time>${timeAgo(f.t)}</time></li>`).join('')

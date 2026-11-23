@@ -12,6 +12,16 @@ function renderVerdict(kind, title, sub) {
   return `<div class="verdict ${kind}"><span class="vicon">${icon}</span><div><b>${esc(title)}</b><p>${esc(sub)}</p></div></div>`;
 }
 
+function resetEditor() {
+  if (cur === null) return;
+  const saved = curSavedSolution || '';
+  edSet(saved);   // one undoable step: Ctrl+Z brings the draft back
+  const msg = saved ? 'editor reset to saved code' : 'editor cleared';
+  setStatus(msg);
+  toast(saved ? 'Editor reset to your saved solution · Ctrl+Z to undo' : 'Editor cleared · Ctrl+Z to undo');
+  setTimeout(() => { if (document.getElementById('status').textContent === msg) setStatus(''); }, 1600);
+}
+
 async function check() {
   if (cur === null || checking) return;
   const sql = cm.getValue().trim();
@@ -58,7 +68,7 @@ async function check() {
   if (!r.ok) return failHint(r.error || 'Query failed.');
 
   const cmp = compareGrids(r.result, curExpected, cur);
-  G.checks++; bumpDay('a');
+  G.checks++; bumpDay('a'); saveGame();
   if (cmp.ok) {
     G.checksOk++; lastFail = null;
     out.innerHTML = renderVerdict('ok', 'Accepted',
@@ -71,7 +81,7 @@ async function check() {
     setStatus('accepted ✓');
   } else {
     G.fails[cur] = (G.fails[cur] || 0) + 1;
-    sfx('bad'); updatePointsUI();
+    sfx('bad'); updatePointsUI(); saveGame();
     const parts = [];
     if (!cmp.colsOk) parts.push(`Expected ${curExpected.columns.length} column${curExpected.columns.length === 1 ? '' : 's'}, got ${r.result.columns.length}.`);
     parts.push(`${cmp.matched} of ${cmp.expectedRows} expected row${cmp.expectedRows === 1 ? '' : 's'} matched.`);
@@ -108,7 +118,7 @@ async function run() {
   }
   const secs = ((performance.now() - t0) / 1000).toFixed(2);
   setStatus('');
-  G.runs++; bumpDay('a'); updatePointsUI();
+  G.runs++; bumpDay('a'); updatePointsUI(); saveGame();
   if (!r.ok) return failHint(r.error);
   if (r.message) {
     out.innerHTML = '<div class="msg">' + esc(r.message) + '</div><p class="hint" style="margin-top:8px">Statement executed. Use Check to compare a SELECT result with Example 1.</p>';
@@ -132,6 +142,7 @@ async function saveProgress(status, opts = {}) {
     body: JSON.stringify({ id: cur, status, solution: sol }) })).json();
   if (!r.ok) return setStatus('Save failed');
   const p = items.find(x => x.id === cur); if (p) p.status = status;
+  broadcast({ type:'progress', id:cur, status });
   const bonusNotes = [];
   if (status === 'solved' && wasStatus !== 'solved') {
     const k = dayKey(), hr = new Date().getHours();
@@ -154,6 +165,7 @@ async function saveProgress(status, opts = {}) {
     ensureReference();
     renderTab();
   }
+  saveGame();
   const gained = calcPoints().pts - prevPts;
   if (status === 'solved' && wasStatus !== 'solved') {
     toast(`<b>+${gained} XP</b> · problem solved${bonusNotes.length ? '<br>' + bonusNotes.join(' · ') : ''}<br>Editorial and reference solution unlocked`);
@@ -222,45 +234,53 @@ async function resetProgress() {
     toast('Reset failed', 'bad');
     return;
   }
-  items.forEach(p => p.status = 'todo');
-  G = GAME_DEFAULT(); saveGame();
-  curSavedSolution = ''; curMeta = { status:'todo', updated:'' }; curRef = null;
-  if (cur !== null) {
-    edSet('', true);
-    document.getElementById('out').innerHTML = '<p class="hint">Progress was reset. Run your query, then hit Check.</p>';
-    document.getElementById('outMeta').textContent = '';
-    setStatus('');
-    updateTabLocks();
-    setTab('description');
-  }
-  renderList(); refreshProgress();
+  broadcast({ type:'reset' });
+  applyReset();
   toast('<b>Progress reset</b> · 0 / ' + items.length + ' solved');
 }
 
 document.getElementById('run').onclick = run;
 document.getElementById('check').onclick = check;
 document.getElementById('format').onclick = formatEditor;
+document.getElementById('resetEditor').onclick = resetEditor;
 document.getElementById('save').onclick = () => saveProgress('attempted');
 document.getElementById('solved').onclick = () => saveProgress('solved');
 document.getElementById('exportProgress').onclick = exportProgress;
 document.getElementById('resetProgress').onclick = resetProgress;
-document.getElementById('navProblems').onclick = e => { e.preventDefault(); showView('problems'); };
-document.getElementById('navPlan').onclick = e => { e.preventDefault(); showView('plan'); };
-document.getElementById('navHome').onclick = e => { e.preventDefault(); showView('home'); };
-document.getElementById('navUser').onclick = () => showView('settings');
-document.getElementById('navStreak').onclick = () => showView('home');
+const bindNav = (id, view) => {
+  document.getElementById(id).onclick = e => {
+    if (!plainClick(e)) return;   // let Ctrl/Cmd/Shift/middle-click open a new tab
+    e.preventDefault();
+    navigate(view);
+  };
+};
+bindNav('navProblems', 'problems');
+bindNav('navPlan', 'plan');
+bindNav('navHome', 'home');
+document.getElementById('navUser').onclick = () => navigate('settings');
+document.getElementById('navStreak').onclick = () => navigate('home');
 document.getElementById('navStreak').style.cursor = 'pointer';
-document.getElementById('navPoints').onclick = () => showView('home');
+document.getElementById('navPoints').onclick = () => navigate('home');
 document.getElementById('navPoints').style.cursor = 'pointer';
 document.getElementById('navPoints').title = 'Open the dashboard';
-document.getElementById('homeContinue').onclick = () => {
+document.getElementById('homeContinue').onclick = e => {
+  if (!plainClick(e)) return;
+  e.preventDefault();
   const p = nextProblem();
   if (p) openFromPlan(p.id, p.schema_name);
+  else navigate('plan');
 };
-document.getElementById('homePlan').onclick = () => showView('plan');
+document.getElementById('homePlan').onclick = e => {
+  if (!plainClick(e)) return;
+  e.preventDefault();
+  navigate('plan');
+};
 document.getElementById('homeReset').onclick = async () => { await resetProgress(); renderHome(); };
-document.getElementById('brandHome').onclick = () => showView('home');
-document.getElementById('brandHome').onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showView('home'); } };
+document.getElementById('brandHome').onclick = e => {
+  if (!plainClick(e)) return;
+  e.preventDefault();
+  navigate('home');
+};
 document.querySelectorAll('#achFilter .fchip').forEach(b => b.onclick = () => {
   achFilter = b.dataset.f;
   document.querySelectorAll('#achFilter .fchip').forEach(x => x.classList.toggle('active', x === b));
