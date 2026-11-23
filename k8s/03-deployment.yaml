@@ -1,0 +1,117 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sql50
+  namespace: sql50
+  labels:
+    app.kubernetes.io/name: sql50
+    app.kubernetes.io/component: web
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: sql50
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: sql50
+        app.kubernetes.io/component: web
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: app
+          image: sql50:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: sql50-config
+          env:
+            # Required: without it the app falls back to 127.0.0.1:5432 inside
+            # the pod, which has no Postgres.
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: sql50-secrets
+                  key: DATABASE_URL
+            # Optional keys: pod still starts when they are absent.
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: sql50-secrets
+                  key: AWS_ACCESS_KEY_ID
+                  optional: true
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: sql50-secrets
+                  key: AWS_SECRET_ACCESS_KEY
+                  optional: true
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: sql50-secrets
+                  key: GEMINI_API_KEY
+                  optional: true
+          # Boot loads solutions.json (S3 or local) and runs db.connect() +
+          # ensure_tables(); give it room before liveness starts counting.
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 3
+            failureThreshold: 30
+          # Liveness must not touch the database: a Neon blip would restart the pod.
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          # Readiness does touch the database (500 when psql fails), so traffic
+          # is withheld while the DB is unreachable.
+          readinessProbe:
+            httpGet:
+              path: /api/state
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 192Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        # psql writes scratch files under /tmp; the root filesystem is read-only.
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi

@@ -1,0 +1,119 @@
+  <section id="settings" class="page" hidden>
+    <div class="page-inner">
+      <div class="set-head">
+        <h1>Settings</h1>
+        <p class="hint">Profile and preferences are saved in this browser. Progress and solutions stay in PostgreSQL.</p>
+      </div>
+      <div class="set-grid">
+        <nav class="set-nav" id="setNav">
+          <a href="#" data-to="set-profile">👤 Profile</a>
+          <a href="#" data-to="set-goals">🥅 Goals</a>
+          <a href="#" data-to="set-look">🎨 Appearance</a>
+          <a href="#" data-to="set-game">🎮 Gameplay</a>
+          <a href="#" data-to="set-keys">⌨️ Shortcuts</a>
+          <a href="#" data-to="set-data">💾 Data</a>
+        </nav>
+        <div>
+          <div class="card set-sec" id="set-profile">
+            <h3>Profile</h3>
+            <div class="prof-top"><span class="av xl" id="setAvBig">🦊</span><div><b id="setNameShow"></b><div class="hint" id="setMeta"></div></div></div>
+            <div class="set-row">
+              <div class="lbl"><b>Display name</b><span>Shown on your dashboard.</span></div>
+              <input class="input" id="setName" maxlength="24" autocomplete="off" aria-label="Display name">
+              <button class="btn" id="setNameSave">Save</button>
+            </div>
+            <div class="set-row stack"><div class="lbl"><b>Avatar</b></div><div class="av-pick" id="setAvPick"></div></div>
+          </div>
+
+          <div class="card set-sec" id="set-goals">
+            <h3>Goals</h3>
+            <div class="set-row">
+              <div class="lbl"><b>Daily goal</b><span>Problems to solve per day. Hitting it unlocks 🥅 Goal Getter.</span></div>
+              <div class="choice" id="setGoal"></div>
+            </div>
+          </div>
+
+          <div class="card set-sec" id="set-look">
+            <h3>Appearance</h3>
+            <div class="set-row">
+              <div class="lbl"><b>Theme</b></div>
+              <div class="seg" id="setTheme"><button data-theme="dark">🌙 Dark</button><button data-theme="light">☀️ Light</button></div>
+            </div>
+            <div class="set-row">
+              <div class="lbl"><b>Editor font size</b><span id="setFontVal">14px</span></div>
+              <input type="range" min="12" max="20" step="1" id="setFont" aria-label="Editor font size">
+            </div>
+            <pre class="code-block" id="setFontPreview">SELECT name FROM customer WHERE referee_id &lt;&gt; 2 OR referee_id IS NULL;</pre>
+          </div>
+
+          <div class="card set-sec" id="set-game">
+            <h3>Gameplay</h3>
+            <div class="set-row">
+              <div class="lbl"><b>Sound effects</b><span>Chimes on Accepted, achievements and level-ups.</span></div>
+              <button class="btn" id="setSoundTest">Test</button>
+              <label class="switch"><input type="checkbox" id="setSound" aria-label="Sound effects"><span></span></label>
+            </div>
+            <div class="set-row">
+              <div class="lbl"><b>Confetti</b><span>Celebrate solves and level-ups.</span></div>
+              <label class="switch"><input type="checkbox" id="setConfetti" aria-label="Confetti"><span></span></label>
+            </div>
+            <div class="set-row">
+              <div class="lbl"><b>Autocomplete as you type</b><span><kbd>Ctrl</kbd>+<kbd>Space</kbd> always works.</span></div>
+              <label class="switch"><input type="checkbox" id="setAuto" aria-label="Autocomplete as you type"><span></span></label>
+            </div>
+            <div class="set-row">
+              <div class="lbl"><b>AI hint on errors</b><span>After a failed Run or Check, ask the AI tutor for a hint (never the solution).</span></div>
+              <label class="switch"><input type="checkbox" id="setAiAuto" aria-label="AI hint on errors"><span></span></label>
+            </div>
+          </div>
+
+          <div class="card set-sec" id="set-keys">
+            <h3>Keyboard shortcuts</h3>
+            <dl class="keys">
+              <dt><kbd>Ctrl</kbd>+<kbd>Enter</kbd></dt><dd>Run query</dd>
+              <dt><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Enter</kbd></dt><dd>Check against Example 1</dd>
+              <dt><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F</kbd></dt><dd>Format SQL</dd>
+              <dt><kbd>Ctrl</kbd>+<kbd>Space</kbd></dt><dd>Show suggestions (tables, columns, aliases, keywords)</dd>
+              <dt><kbd>Tab</kbd> / <kbd>Enter</kbd></dt><dd>Accept suggestion</dd>
+              <dt><kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd></dt><dd>Indent / outdent</dd>
+              <dt><kbd>Ctrl</kbd>+<kbd>/</kbd></dt><dd>Toggle <code>--</code> comment</dd>
+              <dt><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Y</kbd></dt><dd>Undo / redo</dd>
+              <dt><kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>X</kbd> / <kbd>V</kbd></dt><dd>Copy / cut / paste (no selection = whole line)</dd>
+              <dt><kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd></dt><dd>Move line up / down</dd>
+              <dt><kbd>Shift</kbd>+<kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd></dt><dd>Duplicate line</dd>
+              <dt><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd></dt><dd>Delete line</dd>
+              <dt><kbd>Ctrl</kbd>+<kbd>L</kbd></dt><dd>Select line</dd>
+              <dt><kbd>Ctrl</kbd>+<kbd>D</kbd></dt><dd>Add next occurrence (multi-cursor)</dd>
+              <dt><kbd>Ctrl</kbd>+<kbd>Click</kbd></dt><dd>Add a cursor</dd>
+              <dt><kbd>Ctrl</kbd>+<kbd>]</kbd> / <kbd>[</kbd></dt><dd>Indent / outdent line</dd>
+              <dt><kbd>Esc</kbd></dt><dd>Close suggestions, then leave the editor</dd>
+            </dl>
+          </div>
+
+          <div class="card set-sec" id="set-data">
+            <h3>Data</h3>
+            <div class="set-row">
+              <div class="lbl"><b>Export progress</b><span>Download statuses, saved SQL and XP summary as JSON.</span></div>
+              <button class="btn" id="setExport">Export JSON</button>
+            </div>
+            <div class="set-row">
+              <div class="lbl"><b>Replay onboarding</b><span>Walk through the intro tour again.</span></div>
+              <button class="btn" id="setReplay">Replay</button>
+            </div>
+          </div>
+
+          <div class="card set-sec danger-card">
+            <h3>Danger zone</h3>
+            <div class="set-row">
+              <div class="lbl"><b>Reset all progress</b><span>Clears solved status, saved SQL, XP, streaks and achievements.</span></div>
+              <button class="btn danger" id="setReset">Reset progress</button>
+            </div>
+            <div class="set-row">
+              <div class="lbl"><b>Log out</b><span>Return to the login screen. Your data stays.</span></div>
+              <button class="btn" id="setLogout">Log out</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>

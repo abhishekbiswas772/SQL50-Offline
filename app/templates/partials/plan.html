@@ -1,0 +1,54 @@
+  <section id="plan" hidden>
+    <div class="plan-inner">
+      <div class="plan-hero">
+        <div class="hero-main">
+          <div class="kicker">Study Plan</div>
+          <h1>Top SQL 50</h1>
+          <p>Master the SQL patterns interviewers ask most. Fifty curated problems across seven topics, solved against a real PostgreSQL database — no account, no internet.</p>
+          <div class="hero-tags">
+            <span id="planCount">50 problems</span>
+            <span id="planTopics">7 topics</span>
+            <span>PostgreSQL 18</span>
+          </div>
+          <div class="hero-actions">
+            <button id="planContinue" class="btn primary">
+              <svg width="10" height="11" viewBox="0 0 10 11" fill="currentColor"><path d="M0 0l10 5.5L0 11z"/></svg>
+              <span id="planContinueLabel">Start plan</span>
+            </button>
+            <button id="exportProgress" class="btn" title="Download progress as JSON">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>
+              Export
+            </button>
+            <button id="resetProgress" class="btn danger" title="Clear all progress and saved SQL">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+              Reset
+            </button>
+          </div>
+        </div>
+        <div class="hero-stats">
+          <div class="ring" id="planRing">
+            <div class="ring-in"><b id="planPct">0%</b><span>completed</span></div>
+          </div>
+          <div class="hero-counts"><b id="planSolved">0</b> of <span id="planTotal">50</span> solved</div>
+        </div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat solved"><b id="statSolved">0</b><span>Solved</span></div>
+        <div class="stat attempted"><b id="statAttempted">0</b><span>Attempted</span></div>
+        <div class="stat todo"><b id="statTodo">50</b><span>Not started</span></div>
+      </div>
+
+      <div class="plan-list-head">
+        <h2>Curriculum</h2>
+        <div class="filter-chips" id="diffFilter">
+          <button class="fchip active" data-f="all">All <b id="fAll">50</b></button>
+          <button class="fchip" data-f="Easy">Easy <b id="fEasy">0</b></button>
+          <button class="fchip" data-f="Medium">Medium <b id="fMedium">0</b></button>
+          <button class="fchip" data-f="Hard">Hard <b id="fHard">0</b></button>
+        </div>
+      </div>
+      <div id="planSections"></div>
+      <p class="hint plan-foot">Progress and saved solutions live in your local PostgreSQL database.</p>
+    </div>
+  </section>

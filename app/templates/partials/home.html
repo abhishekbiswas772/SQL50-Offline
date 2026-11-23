@@ -1,0 +1,76 @@
+  <section id="home" class="page" hidden>
+    <div class="page-inner">
+      <div class="home-hero">
+        <div class="hero-main">
+          <div class="kicker">Dashboard</div>
+          <div class="hello"><span class="av" id="helloAv">🦊</span><span id="helloText">Welcome</span></div>
+          <p class="hello-sub" id="helloSub"></p>
+          <div class="lvl-line">
+            <span class="lvl-chip" id="ptLevel">Level 1</span><span class="ttl" id="ptTitle">Novice</span>
+            <div class="lvlbar"><i id="ptBar"></i></div><span id="ptNext">100 XP to level 2</span>
+          </div>
+          <div class="hero-actions" style="margin-top:16px">
+            <button id="homeContinue" class="btn primary">
+              <svg width="10" height="11" viewBox="0 0 10 11" fill="currentColor"><path d="M0 0l10 5.5L0 11z"/></svg>
+              <span id="homeContinueLabel">Start plan</span>
+            </button>
+            <button id="homePlan" class="btn">View study plan</button>
+            <button id="homeReset" class="btn danger" title="Clear all progress, saved SQL, XP, streaks and achievements">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+              Reset progress
+            </button>
+          </div>
+        </div>
+        <div class="hero-tile" title="Days in a row with any practice">
+          <span class="flame cold" id="homeFlame">🔥</span><b id="homeStreak">0</b><span>day streak</span><small id="homeBest">best 0</small>
+        </div>
+        <div class="hero-tile" title="Problems solved today vs your daily goal">
+          <div class="goal-ring" id="goalRing"><div id="goalText">0/3</div></div><span>daily goal</span><small id="goalSub"></small>
+        </div>
+      </div>
+
+      <div class="kpis">
+        <div class="kpi"><span class="k-ico">✅</span><b id="kSolved">0</b><span id="kSolvedOf">of 50 solved</span></div>
+        <div class="kpi"><span class="k-ico">⭐</span><b id="ptTotal">0</b><span>total XP</span></div>
+        <div class="kpi"><span class="k-ico">🎯</span><b id="kAcc">—</b><span>check accuracy</span></div>
+        <div class="kpi"><span class="k-ico">🏹</span><b id="kFirst">0</b><span>first-try accepts</span></div>
+        <div class="kpi"><span class="k-ico">🏆</span><b id="kAch">0</b><span id="kAchOf">achievements</span></div>
+      </div>
+
+      <div class="home-grid">
+        <div class="col">
+          <div class="card daily" id="dailyCard"><p class="hint">Loading today's challenge…</p></div>
+          <div class="card">
+            <h3>Activity <span id="heatSum"></span></h3>
+            <div class="heat" id="heat"></div>
+            <div class="heat-legend">Less <i></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i> More</div>
+          </div>
+          <div class="card"><h3>Topic mastery <span id="topicSum"></span></h3><div id="topicBars"></div></div>
+        </div>
+        <div class="col">
+          <div class="card"><h3>Difficulty</h3><div id="diffBars"></div></div>
+          <div class="card">
+            <h3>How to earn XP</h3>
+            <ul class="rules">
+              <li>Solve an Easy / Medium / Hard <b>+10 / 20 / 30</b></li>
+              <li>Accepted on the first Check <b>+5 bonus</b></li>
+              <li>Complete the daily challenge <b>+15 bonus</b></li>
+              <li>Save an attempt <b>+2</b></li>
+              <li>Every 100 XP <b>level up</b></li>
+            </ul>
+          </div>
+          <div class="card"><h3>Recent activity</h3><ul class="feed" id="feed"></ul></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:14px">
+        <h3>Achievements <span id="achCount">0 unlocked</span></h3>
+        <div class="filter-chips" id="achFilter" style="margin-bottom:12px">
+          <button class="fchip active" data-f="all">All</button>
+          <button class="fchip" data-f="on">Unlocked</button>
+          <button class="fchip" data-f="off">Locked</button>
+        </div>
+        <div class="ach-grid" id="ptAchievements"></div>
+      </div>
+    </div>
+  </section>

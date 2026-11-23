@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<div id="app">
+{% include "partials/list.html" %}
+
+{% include "partials/workspace.html" %}
+
+{% include "partials/plan.html" %}
+
+{% include "partials/home.html" %}
+
+{% include "partials/settings.html" %}
+</div>
+
+{% include "partials/login.html" %}
+
+{% include "partials/modals.html" %}
+
+{% include "partials/overlays.html" %}
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', path='vendor/codemirror/codemirror.min.js') }}"></script>
+<script src="{{ url_for('static', path='vendor/codemirror/sql.min.js') }}"></script>
+<script src="{{ url_for('static', path='vendor/codemirror/show-hint.min.js') }}"></script>
+<script src="{{ url_for('static', path='vendor/codemirror/closebrackets.min.js') }}"></script>
+<script src="{{ url_for('static', path='vendor/codemirror/matchbrackets.min.js') }}"></script>
+<script src="{{ url_for('static', path='vendor/codemirror/comment.min.js') }}"></script>
+<script src="{{ url_for('static', path='vendor/codemirror/searchcursor.min.js') }}"></script>
+<script src="{{ url_for('static', path='vendor/codemirror/active-line.min.js') }}"></script>
+<script src="{{ url_for('static', path='vendor/codemirror/sublime.min.js') }}"></script>
+<script src="{{ url_for('static', path='vendor/sql-formatter.min.js') }}"></script>
+<script src="{{ url_for('static', path='js/core.js') }}"></script>
+<script src="{{ url_for('static', path='js/game.js') }}"></script>
+<script src="{{ url_for('static', path='js/problems.js') }}"></script>
+<script src="{{ url_for('static', path='js/editor.js') }}"></script>
+<script src="{{ url_for('static', path='js/hints.js') }}"></script>
+<script src="{{ url_for('static', path='js/actions.js') }}"></script>
+<script src="{{ url_for('static', path='js/profile.js') }}"></script>
+<script src="{{ url_for('static', path='js/app.js') }}"></script>
+{% endblock %}

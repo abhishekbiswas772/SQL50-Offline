@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: sql50
+
+resources:
+  - 00-namespace.yaml
+  - 01-configmap.yaml
+  - 02-secret.yaml        # copy 02-secret.example.yaml first; never commit it
+  - 03-deployment.yaml
+  - 04-service.yaml
+  # - 05-ingress.yaml     # only after reading its warning header
+
+images:
+  - name: sql50
+    newTag: latest
+
+labels:
+  - includeSelectors: false
+    pairs:
+      app.kubernetes.io/part-of: sql50

@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sql50-config
+  namespace: sql50
+  labels:
+    app.kubernetes.io/name: sql50
+data:
+  SQL50_PORT: "8000"
+  SQL50_NO_BROWSER: "1"
+  SQL50_PSQL: "/usr/bin/psql"
+  PYTHONUNBUFFERED: "1"
+
+  # Neon object storage for data/ files; local data/ in the image is the fallback.
+  # Drop these two keys entirely to force the local fallback.
+  AWS_ENDPOINT_URL_S3: "https://br-xxxx.storage.us-east-2.aws.neon.tech"
+  AWS_REGION: "us-east-2"
+  S3_BUCKET: "offline-learning-container"
+
+  # AI hints: gemini (when GEMINI_API_KEY is set) or ollama.
+  AI_PROVIDER: "gemini"
+  GEMINI_MODEL: "gemini-3.5-flash,gemini-flash-latest"
+  # Point at a cluster-local Ollama Service if you use the ollama provider.
+  OLLAMA_URL: "http://ollama.ollama.svc.cluster.local:11434"
+  OLLAMA_MODEL: ""

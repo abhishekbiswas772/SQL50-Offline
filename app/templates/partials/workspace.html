@@ -1,0 +1,57 @@
+  <main id="main">
+    <section id="descPane">
+      <div class="tabs" id="descTabs">
+        <span class="tab active" data-tab="description">Description</span>
+        <span class="tab locked" data-tab="editorial">Editorial <span class="lock">🔒</span></span>
+        <span class="tab locked" data-tab="solutions">Solutions <span class="lock">🔒</span></span>
+        <span class="tab" data-tab="submissions">Submissions</span>
+      <span class="tab" data-tab="hints">✨ AI Hint</span>
+      </div>
+      <div id="desc">
+        <div class="empty">
+          <div class="big">SQL 50</div>
+          <p>Pick a problem from the list to start practicing.</p>
+          <p class="hint">Queries run against a real PostgreSQL database.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="work">
+      <div class="code-head">
+        <span class="code-title">Code</span>
+        <span class="lang">PostgreSQL
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        </span>
+        <span id="schema"></span>
+        <span id="status"></span>
+        <button id="format" class="btn icon" title="Format SQL (Ctrl+Shift+F)" aria-label="Format SQL">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h10M4 18h7"/></svg>
+        </button>
+        <button id="run" class="btn primary">
+          <svg width="10" height="11" viewBox="0 0 10 11" fill="currentColor"><path d="M0 0l10 5.5L0 11z"/></svg>
+          Run
+        </button>
+        <button id="check" class="btn check" title="Check against expected output (Ctrl+Shift+Enter)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          Check
+        </button>
+        <button id="save" class="btn icon" title="Save draft" aria-label="Save draft">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+        </button>
+        <button id="solved" class="btn icon" title="Mark as solved" aria-label="Mark as solved">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+        </button>
+      </div>
+      <div class="editor-wrap">
+        <textarea id="editor" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+      </div>
+      <div class="console">
+        <div class="console-head">
+          <span class="ctab active">Result</span>
+          <span class="ctab">Testcase</span>
+          <span id="outMeta"></span>
+        </div>
+        <div id="out"><p class="hint">Run your query to see the result here.</p></div>
+      </div>
+    </section>
+  </main>

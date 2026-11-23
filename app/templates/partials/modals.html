@@ -1,0 +1,45 @@
+<div id="onboard" class="modal-bg" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-label="Welcome tour">
+    <div id="obBody"></div>
+    <div class="ob-foot">
+      <div class="ob-dots" id="obDots"></div>
+      <span class="sp"></span>
+      <button class="linkish" id="obSkip" type="button">Skip tour</button>
+      <button class="btn" id="obBack">Back</button>
+      <button class="btn orange" id="obNext">Next</button>
+    </div>
+  </div>
+</div>
+
+<div id="celebrate" class="modal-bg" hidden>
+  <div class="modal celebrate" role="dialog" aria-modal="true" aria-labelledby="celTitle">
+    <div class="big-ico" id="celIco">🚀</div>
+    <h2 id="celTitle"></h2>
+    <p id="celText"></p>
+    <button class="btn orange big" id="celOk">Awesome!</button>
+  </div>
+</div>
+
+<div id="confirmReset" class="modal-bg" hidden>
+  <div class="modal confirm" role="alertdialog" aria-modal="true" aria-labelledby="crTitle" aria-describedby="crText">
+    <div class="cr-ico">⚠️</div>
+    <h2 id="crTitle">Reset all progress?</h2>
+    <p id="crText">This permanently clears, for all 50 problems:</p>
+    <ul class="ob-list">
+      <li>✅ Solved / attempted status <b id="crSolved"></b></li>
+      <li>💾 Every saved SQL solution</li>
+      <li>⭐ XP bonuses, levels and streaks <b id="crXp"></b></li>
+      <li>🏆 Unlocked achievements <b id="crAch"></b></li>
+    </ul>
+    <p class="hint">Your profile and settings stay. This cannot be undone.</p>
+    <div class="field">
+      <label for="crInput">Type <b>RESET</b> to confirm</label>
+      <input class="input" id="crInput" autocomplete="off" spellcheck="false" placeholder="RESET">
+    </div>
+    <div class="ob-foot">
+      <span class="sp"></span>
+      <button class="btn" id="crCancel">Cancel</button>
+      <button class="btn danger-solid" id="crOk" disabled>Reset everything</button>
+    </div>
+  </div>
+</div>

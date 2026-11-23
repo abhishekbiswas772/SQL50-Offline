@@ -1,0 +1,29 @@
+# secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+k8s/*secret*.yaml
+!k8s/*secret*.example.yaml
+k8s/02-secret.yaml
+
+# python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+env/
+.pytest_cache/
+
+# editor / OS / local tooling
+.vscode/
+.idea/
+.claude/settings.local.json
+Thumbs.db
+.DS_Store
+
+# test & screenshot output
+test-results/
+*.png
+!app/static/**/*.png
