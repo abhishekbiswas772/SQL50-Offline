@@ -35,16 +35,16 @@ sql50:latest`, or push to a registry and set `images/newName` in
 
 - `startupProbe: GET /` — 30 × 3s budget for import-time S3 read + `ensure_tables()`.
 - `livenessProbe: GET /` — no DB call, so a Neon outage does not restart pods.
-- `readinessProbe: GET /api/state` — returns 500 when `psql` fails, so traffic is
-  withheld while the database is unreachable.
+- `readinessProbe: GET /` — no DB call either. A DB-touching probe every few seconds
+  keeps Neon compute awake 24/7 and burns the free plan's compute hours.
 
 ## Known constraints
 
 1. **Host-header guard.** `app/main.py:44` allows POSTs only from
    `127.0.0.1:<SQL50_PORT>` or `localhost:<SQL50_PORT>`. Port-forward satisfies
    it; an Ingress hostname does not. See `05-ingress.yaml`.
-2. **`DATABASE_URL` required.** Without it the app falls back to
-   `127.0.0.1:5432`, which is empty inside the pod, so readiness stays red.
+2. **`DATABASE_URL` required.** Without it (or if Neon is unreachable at boot)
+   the app exits, so the pod crash-loops until the secret is fixed.
 3. **`SQL50_PORT` and the reached port must match**, or POSTs 403.
 4. **`maxUnavailable: 0`** means a rollout cannot progress while the new pod's
    readiness probe fails. Handy for safe deploys, painful during a DB outage;

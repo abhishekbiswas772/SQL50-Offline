@@ -13,7 +13,7 @@ data:
 
   # Neon object storage for data/ files; local data/ in the image is the fallback.
   # Drop these two keys entirely to force the local fallback.
-  AWS_ENDPOINT_URL_S3: "https://br-xxxx.storage.us-east-2.aws.neon.tech"
+  AWS_ENDPOINT_URL_S3: "https://br-fragrant-meadow-bdm6p8rm.storage.c-8.us-east-2.aws.neon.tech"
   AWS_REGION: "us-east-2"
   S3_BUCKET: "offline-learning-container"
 

@@ -44,8 +44,7 @@ spec:
             - configMapRef:
                 name: sql50-config
           env:
-            # Required: without it the app falls back to 127.0.0.1:5432 inside
-            # the pod, which has no Postgres.
+            # Required: the app refuses to start without it (db.connect() raises).
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
@@ -86,11 +85,12 @@ spec:
             periodSeconds: 20
             timeoutSeconds: 3
             failureThreshold: 3
-          # Readiness does touch the database (500 when psql fails), so traffic
-          # is withheld while the DB is unreachable.
+          # Readiness must not touch the database either: any query more often than
+          # every 5 min keeps Neon's compute from scaling to zero, and an always-on
+          # 0.25 CU uses ~180 CU-h/month, past the free plan, so the DB stops mid-month.
           readinessProbe:
             httpGet:
-              path: /api/state
+              path: /
               port: http
             periodSeconds: 10
             timeoutSeconds: 5
